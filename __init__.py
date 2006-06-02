@@ -29,6 +29,7 @@ try:
 except ImportError:
     tzname = ('UNKNOWN', 'UNKNOWN')
 
+
 # These are needed because the various date formats below must
 # be in english per the RFCs. That means we can't use strftime,
 # which is affected by different locale settings.
@@ -456,7 +457,7 @@ def safelocaltime(t):
 
 class DateTimeParser:
 
-    def parse(self, arg, local=1):
+    def parse(self, arg, local=True):
         """Parse a string containing some sort of date-time data.
 
         This function returns a tuple (year, month, day, hour, minute,
@@ -637,7 +638,7 @@ class DateTimeParser:
         tz = self.localZone(ltm)
         return tz
 
-    def _parse(self, string, local=1):
+    def _parse(self, string, local=True):
         # Parse date-time components from a string
         month = year = tz = tm = None
         spaces         = self.space_chars
@@ -912,7 +913,7 @@ class _tzinfo(_tzinfo):
 
     def dst(self, dt):
         return None
-    
+
     def tzname(self, dt):
         return None
 
@@ -938,11 +939,15 @@ tzinfo.__safe_for_unpickling__ = True
 ######################################################################
 
 from datetime import datetime as _datetime
-def parseDatetimetz(string):
-    y, mo, d, h, m, s, tz = parse(string)
+
+def parseDatetimetz(string, local=True):
+    y, mo, d, h, m, s, tz = parse(string, local)
     s, micro = divmod(s, 1.0)
     micro = round(micro * 1000000)
-    offset = _tzoffset(tz, None) / 60
+    if tz:
+        offset = _tzoffset(tz, None) / 60
+    else:
+        offset = 0
     return _datetime(y, mo, d, h, m, int(s), int(micro), tzinfo(offset))
 
 _iso_tz_re = re.compile("[-+]\d\d:\d\d$")

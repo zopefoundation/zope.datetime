@@ -16,13 +16,17 @@
 $Id$
 """
 import unittest
+from time import gmtime
+from datetime import datetime
+
 from zope.datetime import parse, time, DateTimeError
+from zope.datetime import parseDatetimetz, tzinfo
+from zope.datetime import _tzoffset
+
 
 class Test(unittest.TestCase):
 
     def testParse(self):
-        from zope.datetime import parse
-
         self.assertEqual(parse('1999 12 31')[:6],
                          (1999, 12, 31, 0, 0, 0))
         self.assertEqual(parse('1999 12 31 EST'),
@@ -56,8 +60,6 @@ class Test(unittest.TestCase):
         self.assertEqual(parse('1999-12-31T01:02:03.456-00:30')[6], '-0030')
 
     def testTime(self):
-        from time import gmtime
-        from zope.datetime import time
         self.assertEqual(gmtime(time('1999 12 31 GMT'))[:6],
                          (1999, 12, 31, 0, 0, 0))
         self.assertEqual(gmtime(time('1999 12 31 EST'))[:6],
@@ -70,7 +72,6 @@ class Test(unittest.TestCase):
                          (1999, 12, 31, 0, 11, 22))
 
     def testBad(self):
-        from zope.datetime import time, DateTimeError
         self.assertRaises(DateTimeError, parse, '1999')
         self.assertRaises(DateTimeError, parse, '1999-31-12 1:2:63.456')
         self.assertRaises(DateTimeError, parse, '1999-31-13 1:2:3.456')
@@ -78,7 +79,6 @@ class Test(unittest.TestCase):
         self.assertRaises(DateTimeError, parse, 'April 31, 1999 1:2:3.456')
 
     def testLeap(self):
-        from zope.datetime import time, DateTimeError
         self.assertRaises(DateTimeError, parse, '1999-2-29 1:2:3.456')
         self.assertRaises(DateTimeError, parse, '1900-2-29 1:2:3.456')
         self.assertEqual(parse('2000-02-29 1:2:3')[:6],
@@ -87,17 +87,16 @@ class Test(unittest.TestCase):
                          (2004, 2, 29, 1, 2, 3))
 
     def test_tzoffset(self):
-        from zope.datetime import _tzoffset
         self.assertEqual(_tzoffset('-0400', None), -4*60*60)
         self.assertEqual(_tzoffset('-0030', None), -30*60)
         self.assertEqual(_tzoffset('+0200', None), 2*60*60)
         self.assertEqual(_tzoffset('EET', None), 2*60*60)
 
     def testParseDatetimetz(self):
-        from datetime import datetime
-        from zope.datetime import parseDatetimetz, tzinfo
         self.assertEqual(parseDatetimetz('1999-12-31T01:02:03.037-00:30'),
                          datetime(1999, 12, 31, 1, 2, 3, 37000, tzinfo(-30)))
+        self.assertEqual(parseDatetimetz('2003 6 4 00:00:00 ', local=False),
+                         datetime(2003, 6, 4, tzinfo=tzinfo(0)))
 
 def test_suite():
     loader=unittest.TestLoader()
