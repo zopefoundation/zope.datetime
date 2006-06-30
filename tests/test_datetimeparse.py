@@ -96,7 +96,7 @@ class Test(unittest.TestCase):
         self.assertEqual(parseDatetimetz('1999-12-31T01:02:03.037-00:30'),
                          datetime(1999, 12, 31, 1, 2, 3, 37000, tzinfo(-30)))
         self.assertEqual(parseDatetimetz('2003 6 4 00:00:00 ', local=False),
-                         datetime(2003, 6, 4, tzinfo=tzinfo(0)))
+                         datetime(2003, 6, 4))
 
 def test_suite():
     loader=unittest.TestLoader()
