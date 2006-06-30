@@ -946,8 +946,9 @@ def parseDatetimetz(string, local=True):
     micro = round(micro * 1000000)
     if tz:
         offset = _tzoffset(tz, None) / 60
+        _tzinfo = tzinfo(offset)
     else:
-        offset = 0
-    return _datetime(y, mo, d, h, m, int(s), int(micro), tzinfo(offset))
+        _tzinfo = None
+    return _datetime(y, mo, d, h, m, int(s), int(micro), _tzinfo)
 
 _iso_tz_re = re.compile("[-+]\d\d:\d\d$")
