@@ -18,13 +18,10 @@ $Id$
 
 import os
 
-try:
-    from setuptools import setup, Extension
-except ImportError, e:
-    from distutils.core import setup, Extension
+from setuptools import setup, find_packages
 
 setup(name='zope.datetime',
-      version='3.4-dev',
+      version='3.4dev',
       url='http://svn.zope.org/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
@@ -32,9 +29,7 @@ setup(name='zope.datetime',
       author_email='zope3-dev@zope.org',
       long_description="Commonly used date and time related utility functions.",
 
-      packages=['zope',
-                'zope.datetime',
-                'zope.datetime.tests'],
+      packages=find_packages('src'),
       package_dir = {'': 'src'},
 
       namespace_packages=['zope',],
