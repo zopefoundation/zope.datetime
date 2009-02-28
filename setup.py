@@ -21,12 +21,12 @@ import os
 from setuptools import setup, find_packages
 
 setup(name='zope.datetime',
-      version = '3.4.1',
-      url='http://svn.zope.org/zope.datetime',
+      version = '3.4.2dev',
+      url='http://pypi.python.org/pypi/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
       author='Zope Corporation and Contributors',
-      author_email='zope3-dev@zope.org',
+      author_email='zope-dev@zope.org',
       long_description="Commonly used date and time related utility functions.",
 
       packages=find_packages('src'),
