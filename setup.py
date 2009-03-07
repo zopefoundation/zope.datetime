@@ -21,7 +21,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(name='zope.datetime',
-      version = '3.4.2dev',
+      version = '3.4.1dev',
       url='http://pypi.python.org/pypi/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
