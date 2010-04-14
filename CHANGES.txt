@@ -4,7 +4,8 @@ CHANGES
 3.4.1 (unreleased)
 ------------------
 
-- ...
+- Added test cases from LP #139360 (all passed without modification to
+  the ``parse`` function).
 
 3.4.0 (2007-07-20)
 ------------------
