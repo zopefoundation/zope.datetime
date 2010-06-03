@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Test for the 'tzinfo() function 
-
-$Id$
 """
 
 from unittest import TestCase, TestSuite, main, makeSuite

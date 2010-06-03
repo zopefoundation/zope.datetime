@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """ Historical timezone data, ported from Zope2's DateTime.DateTimeZone.
-
-$Id$
 """
 
 historical_zone_info = {

@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Test datetime parser
-
-$Id$
 """
 import unittest
 from time import gmtime

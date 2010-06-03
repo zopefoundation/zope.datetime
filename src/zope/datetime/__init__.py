@@ -14,8 +14,6 @@
 """Commonly used utility functions.
 
 Encapsulation of date/time values
-
-$Id$
 """
 import math
 import re
