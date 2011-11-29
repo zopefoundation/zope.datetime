@@ -6,6 +6,7 @@ CHANGES
 
 - Added test cases from LP #139360 (all passed without modification to
   the ``parse`` function).
+- Remove unneeded ``zope.testing`` dependency.
 
 3.4.0 (2007-07-20)
 ------------------

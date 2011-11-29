@@ -23,20 +23,25 @@ import os
 
 from setuptools import setup, find_packages
 
+def read(*rnames):
+    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+
 setup(name='zope.datetime',
       version = '3.4.1dev',
       url='http://pypi.python.org/pypi/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
-      author='Zope Foundation and Contributors',
+      author='Zope Corporation and Contributors',
       author_email='zope-dev@zope.org',
-      long_description="Commonly used date and time related utility functions.",
+      long_description=(
+          "Commonly used date and time related utility functions.\n"
+          + '\n' +
+          read('CHANGES.txt')),
 
       packages=find_packages('src'),
       package_dir = {'': 'src'},
 
       namespace_packages=['zope',],
-      tests_require = ['zope.testing'],
       install_requires=['setuptools'],
       include_package_data = True,
 
