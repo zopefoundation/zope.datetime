@@ -27,7 +27,7 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 setup(name='zope.datetime',
-      version='3.4.1',
+      version='3.4.2dev',
       url='http://pypi.python.org/pypi/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
