@@ -27,7 +27,7 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 setup(name='zope.datetime',
-      version='3.4.2dev',
+      version='4.0.0dev',
       url='http://pypi.python.org/pypi/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
@@ -37,6 +37,19 @@ setup(name='zope.datetime',
           "Commonly used date and time related utility functions.\n"
           + '\n' +
           read('CHANGES.txt')),
+      classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Zope Public License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Software Development',
+        ],
 
       packages=find_packages('src'),
       package_dir = {'': 'src'},
