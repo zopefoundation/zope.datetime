@@ -13,6 +13,7 @@
 ##############################################################################
 """ Historical timezone data, ported from Zope2's DateTime.DateTimeZone.
 """
+from __future__ import print_function
 
 historical_zone_info = {
 'Brazil/Acre': ('Brazil/Acre', 101, 2,
@@ -1178,23 +1179,23 @@ historical_zone_info = {
 
 def dumpTimezoneInfo(_data):
 
-    print "historical_zone_info = {"
+    print("historical_zone_info = {")
 
     items = _data.items()
     items.sort()
     for key, value in items:
         v1, v2, v3, ilist, bitmap, two_by_three, two_nullterm = value
-        print "'%s': ('%s', %s, %s," % (key, v1, v2, v3)
-        print "[",
+        print("'%s': ('%s', %s, %s," % (key, v1, v2, v3))
+        print("[", end='')
         while ilist:
             next_5, ilist = ilist[:5], ilist[5:]
             line = ", ".join(["'%s'" % x for x in next_5])
-            print "%s," % line
-        print "], "
-        print "%s," % repr(bitmap)
-        print "%s, %s)," % (repr(two_by_three), repr(two_nullterm))
+            print("%s," % line)
+        print("], ")
+        print("%s," % repr(bitmap))
+        print("%s, %s)," % (repr(two_by_three), repr(two_nullterm)))
 
-    print "}"
+    print("}")
 
 if __name__ == '__main__':
     dumpTimezoneInfo(historical_zone_info)

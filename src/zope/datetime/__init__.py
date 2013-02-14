@@ -20,7 +20,10 @@ import re
 import time as _time # there is a method definition that makes just "time"
                      # problematic while executing a class definition
 
-from types import StringTypes
+try:
+    from types import StringTypes
+except ImportError:
+    StringTypes = (str, )  # python3 and up
 
 try:
     from time import tzname
@@ -87,7 +90,7 @@ i=int(yr-1)
 to_year =int(i*365+i/4-i/100+i/400-693960.0)
 to_month=tm[yr%4==0 and (yr%100!=0 or yr%400==0)][mo]
 EPOCH  =(to_year+to_month+dy+(hr/24.0+mn/1440.0+sc/86400.0))*86400
-jd1901 =2415385L
+jd1901 =2415385
 
 
 numericTimeZoneMatch=re.compile(r'[+-][0-9][0-9][0-9][0-9]').match #TS
@@ -95,7 +98,8 @@ numericTimeZoneMatch=re.compile(r'[+-][0-9][0-9][0-9][0-9]').match #TS
 class _timezone:
     def __init__(self,data):
         self.name,self.timect,self.typect, \
-        self.ttrans,self.tindex,self.tinfo,self.az=data
+        ttrans,self.tindex,self.tinfo,self.az=data
+        self.ttrans = [int(tt) for tt in ttrans]
 
     def default_index(self):
         if self.timect == 0: return 0
@@ -337,36 +341,36 @@ def _calcDependentSecond(tz, t):
     # Calculates the timezone-dependent second (integer part only)
     # from the timezone-independent second.
     fset = _tzoffset(tz, t)
-    return fset + long(math.floor(t)) + long(EPOCH) - 86400L
+    return fset + int(math.floor(t)) + EPOCH - 86400
 
 def _calcDependentSecond2(yr,mo,dy,hr,mn,sc):
     # Calculates the timezone-dependent second (integer part only)
     # from the date given.
     ss = int(hr) * 3600 + int(mn) * 60 + int(sc)
-    x = long(_julianday(yr,mo,dy)-jd1901) * 86400 + ss
+    x = int(_julianday(yr,mo,dy)-jd1901) * 86400 + ss
     return x
 
 def _calcIndependentSecondEtc(tz, x, ms):
     # Derive the timezone-independent second from the timezone
     # dependent second.
     fsetAtEpoch = _tzoffset(tz, 0.0)
-    nearTime = x - fsetAtEpoch - long(EPOCH) + 86400L + ms
+    nearTime = x - fsetAtEpoch - EPOCH + 86400 + ms
     # nearTime is now within an hour of being correct.
     # Recalculate t according to DST.
-    fset = long(_tzoffset(tz, nearTime))
+    fset = _tzoffset(tz, nearTime)
     x_adjusted = x - fset + ms
     d = x_adjusted / 86400.0
-    t = x_adjusted - long(EPOCH) + 86400L
+    t = x_adjusted - EPOCH + 86400
     millis = (x + 86400 - fset) * 1000 + \
-             long(ms * 1000.0) - long(EPOCH * 1000.0)
+             ms * 1000 - EPOCH * 1000
     s = d - math.floor(d)
     return s,d,t,millis
 
 def _calcHMS(x, ms):
     # hours, minutes, seconds from integer and float.
-    hr = x / 3600
+    hr = x // 3600
     x = x - hr * 3600
-    mn = x / 60
+    mn = x // 60
     sc = x - mn * 60 + ms
     return hr,mn,sc
 
@@ -381,35 +385,33 @@ def _calcYMDHMS(x, ms):
     sc = x - mn * 60 + ms
     return yr,mo,dy,hr,mn,sc
 
-def _julianday(yr,mo,dy):
-    y,m,d=long(yr),long(mo),long(dy)
-    if m > 12L:
-        y=y+m/12L
-        m=m%12L
-    elif m < 1L:
+def _julianday(y,m,d):
+    if m > 12:
+        y=y+m//12
+        m=m%12
+    elif m < 1:
         m=-m
-        y=y-m/12L-1L
-        m=12L-m%12L
-    if y > 0L: yr_correct=0L
-    else:      yr_correct=3L
-    if m < 3L: y, m=y-1L,m+12L
-    if y*10000L+m*100L+d > 15821014L: b=2L-y/100L+y/400L
-    else: b=0L
-    return (1461L*y-yr_correct)/4L+306001L*(m+1L)/10000L+d+1720994L+b
+        y=y-m//12-1
+        m=12-m%12
+    if y > 0: yr_correct=0
+    else:      yr_correct=3
+    if m < 3: y, m=y-1,m+12
+    if y*10000+m*100+d > 15821014: b=2-y//100+y//400
+    else: b=0
+    return (1461*y-yr_correct)//4+306001*(m+1)//10000+d+1720994+b
 
 def _calendarday(j):
-    j=long(j)
-    if(j < 2299160L):
-        b=j+1525L
+    if(j < 2299160):
+        b=j+1525
     else:
-        a=(4L*j-7468861L)/146097L
-        b=j+1526L+a-a/4L
-    c=(20L*b-2442L)/7305L
-    d=1461L*c/4L
-    e=10000L*(b-d)/306001L
-    dy=int(b-d-306001L*e/10000L)
-    mo=(e < 14L) and int(e-1L) or int(e-13L)
-    yr=(mo > 2) and (c-4716L) or (c-4715L)
+        a=(4*j-7468861)/146097
+        b=j+1526+a-a/4
+    c=(20*b-2442)/7305
+    d=1461*c/4
+    e=10000*(b-d)/306001
+    dy=int(b-d-306001*e/10000)
+    mo=(e < 14) and int(e-1) or int(e-13)
+    yr=(mo > 2) and (c-4716) or (c-4715)
     return int(yr),int(mo),int(dy)
 
 def _tzoffset(tz, t):
@@ -619,7 +621,7 @@ class DateTimeParser:
         if not self._multipleZones:
             return self._localzone0
         fsetAtEpoch = _tzoffset(self._localzone0, 0.0)
-        nearTime = x - fsetAtEpoch - long(EPOCH) + 86400L + ms
+        nearTime = x - fsetAtEpoch - EPOCH + 86400 + ms
         # nearTime is within an hour of being correct.
         try:
             ltm = safelocaltime(nearTime)
@@ -631,7 +633,7 @@ class DateTimeParser:
             yr,mo,dy,hr,mn,sc = _calcYMDHMS(x, 0)
             yr = ((yr - 1970) % 28) + 1970
             x = _calcDependentSecond2(yr,mo,dy,hr,mn,sc)
-            nearTime = x - fsetAtEpoch - long(EPOCH) + 86400L + ms
+            nearTime = x - fsetAtEpoch - EPOCH + 86400 + ms
             ltm = safelocaltime(nearTime)
         tz = self.localZone(ltm)
         return tz
@@ -947,6 +949,6 @@ def parseDatetimetz(string, local=True):
         _tzinfo = tzinfo(offset)
     else:
         _tzinfo = None
-    return _datetime(y, mo, d, h, m, int(s), int(micro), _tzinfo)
+    return _datetime(y, mo, d, int(h), int(m), int(s), int(micro), _tzinfo)
 
 _iso_tz_re = re.compile("[-+]\d\d:\d\d$")
