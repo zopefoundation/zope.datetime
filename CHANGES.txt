@@ -4,6 +4,8 @@ CHANGES
 4.0.0 (unreleased)
 ------------------
 
+- Added support for Python 3.2 and 3.3. (Experimental)
+
 - Dropped support for Python 2.4 and 2.5.
 
 
@@ -12,7 +14,9 @@ CHANGES
 
 - Added test cases from LP #139360 (all passed without modification to
   the ``parse`` function).
+
 - Remove unneeded ``zope.testing`` dependency.
+
 
 3.4.0 (2007-07-20)
 ------------------

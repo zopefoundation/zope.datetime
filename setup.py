@@ -18,7 +18,6 @@
 ##############################################################################
 """Setup for zope.datetime package
 """
-
 import os
 
 from setuptools import setup, find_packages
@@ -53,14 +52,11 @@ setup(name='zope.datetime',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development',
         ],
-
       packages=find_packages('src'),
       package_dir = {'': 'src'},
       test_suite = 'zope.datetime',
-
       namespace_packages=['zope',],
       install_requires=['setuptools'],
       include_package_data = True,
-
       zip_safe = False,
       )
