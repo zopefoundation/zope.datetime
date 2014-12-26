@@ -4,21 +4,21 @@ CHANGES
 4.0.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add support for testing on Travis.
 
 
 4.0.0 (2013-02-19)
 ------------------
 
-- Added support for Python 3.2 and 3.3. (Experimental)
+- Add support for Python 3.2 and 3.3.
 
-- Dropped support for Python 2.4 and 2.5.
+- Drop support for Python 2.4 and 2.5.
 
 
 3.4.1 (2011-11-29)
 ------------------
 
-- Added test cases from LP #139360 (all passed without modification to
+- Add test cases from LP #139360 (all passed without modification to
   the ``parse`` function).
 
 - Remove unneeded ``zope.testing`` dependency.

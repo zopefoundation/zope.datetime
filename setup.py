@@ -32,10 +32,7 @@ setup(name='zope.datetime',
       description='Zope datetime',
       author='Zope Corporation and Contributors',
       author_email='zope-dev@zope.org',
-      long_description=(
-          "Commonly used date and time related utility functions.\n"
-          + '\n' +
-          read('CHANGES.txt')),
+      long_description=read('README.rst') + '\n\n' + read('CHANGES.rst'),
       classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
