@@ -1,3 +1,6 @@
 *.egg-info
 *.pyc
 .tox/
+.coverage
+coverage.xml
+nosetests.xml
