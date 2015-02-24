@@ -53,6 +53,8 @@ for i, ((d, m, y), string) in enumerate(dates):
     _test.__name__ = method_name
     setattr(LP_139360, method_name, _test)
 
+# Hide the temporary from nose
+del _test
 
 def test_suite():
     return unittest.TestSuite((
