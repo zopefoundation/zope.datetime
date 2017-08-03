@@ -331,10 +331,9 @@ def _findLocalTimeZoneName(isDST):
 
             offset = (-localzone / (60 * 60))
             majorOffset = int(offset)
-            if majorOffset != 0:
+            minorOffset = 0
+            if majorOffset != 0: # pragma: no cover
                 minorOffset = abs(int((offset % majorOffset) * 60.0))
-            else: # pragma: no cover
-                minorOffset = 0
             m = '+' if majorOffset >= 0 else ''
             lz = '%s%0.02d%0.02d' % (m, majorOffset, minorOffset)
             _localzone = _cache._zmap[('GMT%s' % lz).lower()]
