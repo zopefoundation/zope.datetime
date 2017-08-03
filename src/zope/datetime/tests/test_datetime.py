@@ -49,6 +49,10 @@ class TestFuncs(unittest.TestCase):
     def test_safegmtime(self):
         self.assertIsNotNone(datetime.safegmtime(6000))
 
+
+    def test_safelocaltime(self):
+        self.assertIsNotNone(datetime.safelocaltime(6000))
+
     def test_calcSD(self):
         s, d = datetime._calcSD(9)
         self.assertAlmostEqual(s, 0, places=1)
@@ -69,6 +73,15 @@ class TestFuncs(unittest.TestCase):
         # division?
         answer = (-4712, 1, 3) if str is bytes else (-4711, 2, 0)
         self.assertEqual(datetime._calendarday(1), answer)
+
+    def test_findLocalTimeZoneName(self):
+        zmap = datetime._cache._zmap
+        try:
+            datetime._cache._zmap = {}
+            name = datetime._findLocalTimeZoneName(True)
+            self.assertEqual('', name)
+        finally:
+            datetime._cache._zmap = zmap
 
 
 class TestTimezone(unittest.TestCase):

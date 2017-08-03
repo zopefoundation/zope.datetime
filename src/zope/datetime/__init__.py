@@ -338,7 +338,7 @@ def _findLocalTimeZoneName(isDST):
             m = '+' if majorOffset >= 0 else ''
             lz = '%s%0.02d%0.02d' % (m, majorOffset, minorOffset)
             _localzone = _cache._zmap[('GMT%s' % lz).lower()]
-        except Exception: # pragma: no cover
+        except Exception:
             _localzone = ''
     return _localzone
 
