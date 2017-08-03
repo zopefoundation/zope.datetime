@@ -65,7 +65,8 @@ class TestFuncs(unittest.TestCase):
 
     def test_calendarday(self):
         # XXX: Why do we get different things on Py2 vs Py3?
-        # Are the calculations wrapping around somewhere?
+        # Are the calculations wrapping around somewhere? Is it the integer
+        # division?
         answer = (-4712, 1, 3) if str is bytes else (-4711, 2, 0)
         self.assertEqual(datetime._calendarday(1), answer)
 
@@ -113,7 +114,6 @@ class TestDateTimeParser(unittest.TestCase):
         return self._makeOne()._parse(input_data)
 
     def test_parse_bad_input(self):
-
         with self.assertRaises(TypeError):
             self._callParse(None)
 
@@ -124,9 +124,19 @@ class TestDateTimeParser(unittest.TestCase):
         with self.assertRaises(datetime.DateError):
             self._callParse("2000-01-32")
 
+        with self.assertRaises(datetime.SyntaxError):
+            self._call_parse("995-01-20")
+
     def test_parse_bad_time(self):
         with self.assertRaises(datetime.TimeError):
             self._callParse("2000-01-01T25:63")
+
+    def test_parse_produces_invalid(self):
+        dtp = self._makeOne()
+        dtp._validDate = lambda *args: False
+
+        with self.assertRaises(datetime.DateError):
+            dtp.parse("2000-01-01")
 
     def test_time_bad_tz(self):
         # Have to mock the time() method here to get
@@ -147,7 +157,7 @@ class TestDateTimeParser(unittest.TestCase):
         dtp = self._makeOne()
         dtp.parse = t
         x = dtp.time("foo")
-        self.assertEqual(x, 946706400.0)
+        self.assertGreaterEqual(x, 946000000.0)
 
     def test_localZone_non_multiple(self):
         dtp = self._makeOne()
@@ -236,8 +246,31 @@ class TestDateTimeParser(unittest.TestCase):
         self.assertEqual(result[:-1],
                          (2030, 10, 30, 0, 0, 0))
 
+        with self.assertRaises(datetime.DateTimeError):
+            self._call_parse("10 30 30 19:61")
+
+        with self.assertRaises(datetime.SyntaxError):
+            self._call_parse("10 30 30 20 20 20 20")
+
     def test_parse_iso_index_error(self):
         dtp = self._makeOne()
         with self.assertRaisesRegexp(datetime.DateError,
                                      "Not an ISO 8601 compliant"):
             dtp._parse_iso8601('')
+
+    def test_parse_with_dot(self):
+        result = self._call_parse("Jan.1.2000")
+        self.assertEqual(result[:-1],
+                         (2000, 1, 1, 0, 0, 0))
+
+    def test_parse_am_pm(self):
+        result = self._call_parse("2000-01-01 12 am")
+        self.assertEqual(result[:-1],
+                         (2000, 1, 1, 0, 0, 0))
+
+        result = self._call_parse("2000-01-01 1 pm")
+        self.assertEqual(result[:-1],
+                         (2000, 1, 1, 13, 0, 0))
+
+    def test_valid_date(self):
+        self.assertFalse(self._makeOne()._validDate(2000, 0, 12))
