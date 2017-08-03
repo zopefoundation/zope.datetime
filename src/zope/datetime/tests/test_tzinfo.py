@@ -11,15 +11,17 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-"""Test for the 'tzinfo() function 
+"""Test for the 'tzinfo() function
 """
 
-from unittest import TestCase, TestSuite, main, makeSuite
+import unittest
 import pickle
 import datetime
 
 from zope.datetime import tzinfo
-class Test(TestCase):
+
+
+class Test(unittest.TestCase):
 
     def test(self):
 
@@ -28,8 +30,8 @@ class Test(TestCase):
             info2 = tzinfo(minutes)
 
             self.assertEqual(info1, info2)
-            self.assert_(info1 is info2)
-            self.assert_(pickle.loads(pickle.dumps(info1)) is info1)
+            self.assertIs(info1, info2)
+            self.assertIs(pickle.loads(pickle.dumps(info1)), info1)
 
 
             self.assertEqual(info1.utcoffset(None),
@@ -44,9 +46,7 @@ class Test(TestCase):
 
 
 def test_suite():
-    return TestSuite((
-        makeSuite(Test),
-        ))
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)
 
-if __name__=='__main__':
-    main(defaultTest='test_suite')
+if __name__ == '__main__':
+    unittest.main(defaultTest='test_suite')

@@ -1177,25 +1177,28 @@ historical_zone_info = {
 [(0, 0, 0)], 'GMT\x00'),
 }
 
-def dumpTimezoneInfo(_data):
+def dumpTimezoneInfo(_data, out=None):
 
-    print("historical_zone_info = {")
+    if out is None: # pragma: no cover
+        import sys
+        out = sys.stdout
 
-    items = _data.items()
-    items.sort()
+    print("historical_zone_info = {", file=out)
+
+    items = sorted(_data.items())
     for key, value in items:
         v1, v2, v3, ilist, bitmap, two_by_three, two_nullterm = value
-        print("'%s': ('%s', %s, %s," % (key, v1, v2, v3))
-        print("[", end='')
+        print("'%s': ('%s', %s, %s," % (key, v1, v2, v3), file=out)
+        print("[", end='', file=out)
         while ilist:
             next_5, ilist = ilist[:5], ilist[5:]
             line = ", ".join(["'%s'" % x for x in next_5])
-            print("%s," % line)
-        print("], ")
-        print("%s," % repr(bitmap))
-        print("%s, %s)," % (repr(two_by_three), repr(two_nullterm)))
+            print("%s," % line, file=out)
+        print("], ", file=out)
+        print("%s," % repr(bitmap), file=out)
+        print("%s, %s)," % (repr(two_by_three), repr(two_nullterm)), file=out)
 
-    print("}")
+    print("}", file=out)
 
 if __name__ == '__main__':
     dumpTimezoneInfo(historical_zone_info)

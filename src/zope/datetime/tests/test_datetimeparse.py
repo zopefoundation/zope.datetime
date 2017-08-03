@@ -97,8 +97,4 @@ class Test(unittest.TestCase):
                          datetime(2003, 6, 4))
 
 def test_suite():
-    loader=unittest.TestLoader()
-    return loader.loadTestsFromTestCase(Test)
-
-if __name__=='__main__':
-    unittest.TextTestRunner().run(test_suite())
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)

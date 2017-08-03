@@ -19,16 +19,9 @@ import math
 import re
 import time as _time # there is a method definition that makes just "time"
                      # problematic while executing a class definition
+from time import tzname
 
-try:
-    from types import StringTypes
-except ImportError:
-    StringTypes = (str, )  # python3 and up
-
-try:
-    from time import tzname
-except ImportError:
-    tzname = ('UNKNOWN', 'UNKNOWN')
+StringTypes = (str,) if str is not bytes else (basestring,)
 
 
 # These are needed because the various date formats below must
@@ -45,15 +38,13 @@ def iso8601_date(ts=None):
     # Return an ISO 8601 formatted date string, required
     # for certain DAV properties.
     # '2000-11-10T16:21:09-08:00
-    if ts is None:
-        ts = _time.time()
+    ts = _time.time() if ts is None else ts
     return _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime(ts))
 
 def rfc850_date(ts=None):
     # Return an HTTP-date formatted date string.
     # 'Friday, 10-Nov-00 16:21:09 GMT'
-    if ts is None:
-        ts = _time.time()
+    ts = _time.time() if ts is None else ts
     year, month, day, hh, mm, ss, wd, y, z = _time.gmtime(ts)
     return "%s, %02d-%3s-%2s %02d:%02d:%02d GMT" % (
             weekday_full[wd],
@@ -65,8 +56,7 @@ def rfc1123_date(ts=None):
     # Return an RFC 1123 format date string, required for
     # use in HTTP Date headers per the HTTP 1.1 spec.
     # 'Fri, 10 Nov 2000 16:21:09 GMT'
-    if ts is None:
-        ts = _time.time()
+    ts = _time.time() if ts is None else ts
     year, month, day, hh, mm, ss, wd, y, z = _time.gmtime(ts)
     return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (weekday_abbr[wd],
                                                     day, monthname[month],
@@ -95,7 +85,7 @@ jd1901 =2415385
 
 numericTimeZoneMatch=re.compile(r'[+-][0-9][0-9][0-9][0-9]').match #TS
 
-class _timezone:
+class _timezone(object):
     def __init__(self,data):
         self.name,self.timect,self.typect, \
         ttrans,self.tindex,self.tinfo,self.az=data
@@ -108,7 +98,7 @@ class _timezone:
         return 0
 
     def index(self, t=None):
-        t = t or _time.time()
+        t = t if t is not None else _time.time()
         if self.timect == 0:
             idx = (0, 0, 0)
         elif t < self.ttrans[0]:
@@ -139,7 +129,7 @@ class _timezone:
 
 
 
-class _cache:
+class _cache(object):
 
     _zlst=['Brazil/Acre','Brazil/DeNoronha','Brazil/East',
            'Brazil/West','Canada/Atlantic','Canada/Central',
@@ -291,7 +281,7 @@ class _cache:
     def __getitem__(self,k):
         try:   n=self._zmap[k.lower()]
         except KeyError:
-            if numericTimeZoneMatch(k) == None:
+            if numericTimeZoneMatch(k) is None:
                 raise DateTimeError('Unrecognized timezone: %s' % k)
             return k
         try:
@@ -301,7 +291,7 @@ class _cache:
             return z
 
 def _findLocalTimeZoneName(isDST):
-    if not _time.daylight:
+    if not _time.daylight: # pragma: no cover
         # Daylight savings does not occur in this time zone.
         isDST = 0
     try:
@@ -311,19 +301,18 @@ def _findLocalTimeZoneName(isDST):
     except KeyError:
         try:
             # Generate a GMT-offset zone name.
-            if isDST:
-                localzone = _time.altzone
-            else:
-                localzone = _time.timezone
+            localzone = _time.altzone if isDST else _time.timezone
+
             offset=(-localzone/(60*60))
             majorOffset=int(offset)
             if majorOffset != 0 :
                 minorOffset=abs(int((offset % majorOffset) * 60.0))
-            else: minorOffset = 0
+            else: # pragma: no cover
+                minorOffset = 0
             m=majorOffset >= 0 and '+' or ''
             lz='%s%0.02d%0.02d' % (m, majorOffset, minorOffset)
             _localzone = _cache._zmap[('GMT%s' % lz).lower()]
-        except:
+        except Exception: # pragma: no cover
             _localzone = ''
     return _localzone
 
@@ -455,7 +444,7 @@ def safelocaltime(t):
                         'of this Python implementation.' % float(t))
     return _time.localtime(t_int)
 
-class DateTimeParser:
+class DateTimeParser(object):
 
     def parse(self, arg, local=True):
         """Parse a string containing some sort of date-time data.
@@ -609,8 +598,8 @@ class DateTimeParser:
         can change according to daylight savings.'''
         if not self._multipleZones:
             return self._localzone0
-        if ltm == None:
-            ltm = _time.localtime()
+
+        ltm = _time.localtime() if ltm is None else ltm
         isDST = ltm[8]
         lz = isDST and self._localzone1 or self._localzone0
         return lz
@@ -723,12 +712,12 @@ class DateTimeParser:
                     v=MonthNumbers[s]
                     if month is None: month=v
                     else: raise SyntaxError(string)
-                    continue
+                    continue # pragma: no cover
                 # Check for time modifier:
                 if s in TimeModifiers:
                     if tm is None: tm=s
                     else: raise SyntaxError(string)
-                    continue
+                    continue # pragma: no cover
                 # Check for and skip day of week:
                 if s in DayOfWeekNames:
                     continue
@@ -893,7 +882,7 @@ time = parser.time
 ######################################################################
 # Time-zone info based soley on offsets
 #
-# Share tzinfos for the same offset 
+# Share tzinfos for the same offset
 
 from datetime import tzinfo as _tzinfo, timedelta as _timedelta
 
@@ -917,7 +906,7 @@ class _tzinfo(_tzinfo):
     def tzname(self, dt):
         return None
 
-    def __repr__(self):
+    def __repr__(self): # pragma: no cover
         return 'tzinfo(%d)' % self.__minutes
 
 
@@ -951,4 +940,4 @@ def parseDatetimetz(string, local=True):
         _tzinfo = None
     return _datetime(y, mo, d, int(h), int(m), int(s), int(micro), _tzinfo)
 
-_iso_tz_re = re.compile("[-+]\d\d:\d\d$")
+_iso_tz_re = re.compile(r"[-+]\d\d:\d\d$")
