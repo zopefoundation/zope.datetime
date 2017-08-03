@@ -23,39 +23,50 @@ import os
 from setuptools import setup, find_packages
 
 def read(*rnames):
-    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+    with open(os.path.join(os.path.dirname(__file__), *rnames)) as f:
+        return f.read()
+
+TESTS_REQUIRE = [
+    'zope.testrunner',
+]
 
 setup(name='zope.datetime',
       version='4.2.0.dev0',
-      url='http://pypi.python.org/pypi/zope.datetime',
+      url='http://github.com/zopefoundation/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
       author='Zope Corporation and Contributors',
       author_email='zope-dev@zope.org',
       long_description=read('README.rst') + '\n\n' + read('CHANGES.rst'),
       classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Zope Public License',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        'Natural Language :: English',
-        'Operating System :: OS Independent',
-        'Topic :: Internet :: WWW/HTTP',
-        'Topic :: Software Development',
-        ],
+          'Development Status :: 5 - Production/Stable',
+          'Intended Audience :: Developers',
+          'License :: OSI Approved :: Zope Public License',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.4',
+          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: Implementation :: CPython',
+          'Programming Language :: Python :: Implementation :: PyPy',
+          'Natural Language :: English',
+          'Operating System :: OS Independent',
+          'Topic :: Internet :: WWW/HTTP',
+          'Topic :: Software Development',
+      ],
       packages=find_packages('src'),
-      package_dir = {'': 'src'},
-      test_suite = 'zope.datetime',
+      package_dir={'': 'src'},
+      test_suite='zope.datetime',
       namespace_packages=['zope',],
-      install_requires=['setuptools'],
-      include_package_data = True,
-      zip_safe = False,
-      )
+      install_requires=[
+          'setuptools',
+      ],
+      tests_require=TESTS_REQUIRE,
+      extras_require={
+          'test': TESTS_REQUIRE,
+      },
+      include_package_data=True,
+      zip_safe=False,
+)
