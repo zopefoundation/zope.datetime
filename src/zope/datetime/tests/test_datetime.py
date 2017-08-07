@@ -14,6 +14,7 @@
 # pylint:disable=protected-access
 import unittest
 
+import time
 from zope import datetime
 
 class TestCache(unittest.TestCase):
@@ -236,9 +237,11 @@ class TestDateTimeParser(unittest.TestCase):
         self.assertEqual(result[:-1],
                          (2000, 1, 10, 0, 0, 0))
 
+        # This one takes "32" as the year, and has nothing for day or month.
+        # Therefore it overrides day, month, and year with the current values
         result = self._call_parse("10 32 12")
         self.assertEqual(result[:-1],
-                         (2017, 8, 3, 0, 0, 0))
+                         time.localtime()[:3] + (0, 0, 0))
 
         result = self._call_parse("13 32 12")
         self.assertEqual(result[:-1],
