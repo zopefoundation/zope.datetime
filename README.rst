@@ -16,4 +16,10 @@
 .. image:: https://coveralls.io/repos/github/zopefoundation/zope.datetime/badge.svg?branch=master
         :target: https://coveralls.io/github/zopefoundation/zope.datetime?branch=master
 
-Commonly used date and time related utility functions.
+.. image:: https://readthedocs.org/projects/zopedatetime/badge/?version=latest
+        :target: https://zopedatetime.readthedocs.io/en/latest/
+        :alt: Documentation Status
+
+Functions to parse and format date/time strings in common formats.
+
+Documentation is hosted at https://zopedatetime.readthedocs.io/
