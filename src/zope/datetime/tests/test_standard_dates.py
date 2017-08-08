@@ -35,8 +35,7 @@ class Test(unittest.TestCase):
                          "Sat, 12 Jan 2002 01:01:01 GMT")
 
 def test_suite():
-    loader=unittest.TestLoader()
-    return loader.loadTestsFromTestCase(Test)
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)
 
-if __name__=='__main__':
-    unittest.TextTestRunner().run(test_suite())
+if __name__ == '__main__':
+    unittest.main(defaultTest='test_suite')

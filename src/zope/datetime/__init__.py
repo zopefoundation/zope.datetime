@@ -17,281 +17,297 @@ Encapsulation of date/time values
 """
 import math
 import re
-import time as _time # there is a method definition that makes just "time"
-                     # problematic while executing a class definition
+# there is a method definition that makes just "time"
+# problematic while executing a class definition
+import time as _time
+from time import tzname
 
-try:
-    from types import StringTypes
-except ImportError:
-    StringTypes = (str, )  # python3 and up
+from datetime import datetime as _datetime
+from datetime import tzinfo as _std_tzinfo, timedelta as _timedelta
 
-try:
-    from time import tzname
-except ImportError:
-    tzname = ('UNKNOWN', 'UNKNOWN')
+
+from zope.datetime.timezones import historical_zone_info as _data
+
+
+StringTypes = (str,) if str is not bytes else (basestring,)
 
 
 # These are needed because the various date formats below must
 # be in english per the RFCs. That means we can't use strftime,
 # which is affected by different locale settings.
-weekday_abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-weekday_full = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
-                'Friday', 'Saturday', 'Sunday']
-monthname    = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+weekday_abbr = [
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
+]
+weekday_full = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+    'Friday', 'Saturday', 'Sunday',
+]
+monthname = [
+    None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+]
 
 
 def iso8601_date(ts=None):
     # Return an ISO 8601 formatted date string, required
     # for certain DAV properties.
     # '2000-11-10T16:21:09-08:00
-    if ts is None:
-        ts = _time.time()
+    ts = _time.time() if ts is None else ts
     return _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime(ts))
 
 def rfc850_date(ts=None):
     # Return an HTTP-date formatted date string.
     # 'Friday, 10-Nov-00 16:21:09 GMT'
-    if ts is None:
-        ts = _time.time()
-    year, month, day, hh, mm, ss, wd, y, z = _time.gmtime(ts)
+    ts = _time.time() if ts is None else ts
+    year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
     return "%s, %02d-%3s-%2s %02d:%02d:%02d GMT" % (
-            weekday_full[wd],
-            day, monthname[month],
-            str(year)[2:],
-            hh, mm, ss)
+        weekday_full[wd],
+        day, monthname[month],
+        str(year)[2:],
+        hh, mm, ss
+    )
 
 def rfc1123_date(ts=None):
     # Return an RFC 1123 format date string, required for
     # use in HTTP Date headers per the HTTP 1.1 spec.
     # 'Fri, 10 Nov 2000 16:21:09 GMT'
-    if ts is None:
-        ts = _time.time()
-    year, month, day, hh, mm, ss, wd, y, z = _time.gmtime(ts)
-    return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (weekday_abbr[wd],
-                                                    day, monthname[month],
-                                                    year,
-                                                    hh, mm, ss)
+    ts = _time.time() if ts is None else ts
+    year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
+    return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
+        weekday_abbr[wd],
+        day, monthname[month],
+        year,
+        hh, mm, ss)
 
-
-
-from zope.datetime.timezones import historical_zone_info as _data
-
-class DateTimeError(Exception): "Date-time error"
-class DateError(DateTimeError): 'Invalid Date Components'
-class TimeError(DateTimeError): 'Invalid Time Components'
-class SyntaxError(DateTimeError): 'Invalid Date-Time String'
+class DateTimeError(Exception):
+    "Date-time error"
+class DateError(DateTimeError):
+    'Invalid Date Components'
+class TimeError(DateTimeError):
+    'Invalid Time Components'
+class SyntaxError(DateTimeError):
+    'Invalid Date-Time String'
 
 # Determine machine epoch
-tm=((0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334),
-    (0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335))
-yr,mo,dy,hr,mn,sc = _time.gmtime(0)[:6]
-i=int(yr-1)
-to_year =int(i*365+i/4-i/100+i/400-693960.0)
-to_month=tm[yr%4==0 and (yr%100!=0 or yr%400==0)][mo]
-EPOCH  =(to_year+to_month+dy+(hr/24.0+mn/1440.0+sc/86400.0))*86400
-jd1901 =2415385
+def _calc_epoch():
+    tm = ((0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334),
+          (0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335))
+    yr, mo, dy, hr, mn, sc = _time.gmtime(0)[:6]
+    i = int(yr - 1)
+    to_year = int(i * 365 + i / 4 - i / 100 + i / 400 - 693960.0)
+    to_month = tm[yr % 4 == 0 and (yr % 100 != 0 or yr % 400 == 0)][mo]
+    epoch = (to_year + to_month + dy + (hr / 24.0 + mn / 1440.0 + sc / 86400.0)) * 86400
+    return epoch
 
 
-numericTimeZoneMatch=re.compile(r'[+-][0-9][0-9][0-9][0-9]').match #TS
+EPOCH = _calc_epoch()
+jd1901 = 2415385
 
-class _timezone:
-    def __init__(self,data):
-        self.name,self.timect,self.typect, \
-        ttrans,self.tindex,self.tinfo,self.az=data
+numericTimeZoneMatch = re.compile(r'[+-][0-9][0-9][0-9][0-9]').match #TS
+
+class _timezone(object):
+
+    def __init__(self, data):
+        self.name, self.timect, self.typect, \
+            ttrans, self.tindex, self.tinfo, self.az = data
         self.ttrans = [int(tt) for tt in ttrans]
 
     def default_index(self):
-        if self.timect == 0: return 0
+        if self.timect == 0:
+            return 0
         for i in range(self.typect):
-            if self.tinfo[i][1] == 0: return i
+            if self.tinfo[i][1] == 0:
+                return i
         return 0
 
     def index(self, t=None):
-        t = t or _time.time()
+        t = t if t is not None else _time.time()
         if self.timect == 0:
             idx = (0, 0, 0)
         elif t < self.ttrans[0]:
             i = self.default_index()
-            idx = (i, ord(self.tindex[0]),i)
+            idx = (i, ord(self.tindex[0]), i)
         elif t >= self.ttrans[-1]:
             if self.timect > 1:
-                idx=(ord(self.tindex[-1]),ord(self.tindex[-1]),
-                     ord(self.tindex[-2]))
+                idx = (ord(self.tindex[-1]), ord(self.tindex[-1]),
+                       ord(self.tindex[-2]))
             else:
-                idx=(ord(self.tindex[-1]),ord(self.tindex[-1]),
-                     self.default_index())
+                idx = (ord(self.tindex[-1]), ord(self.tindex[-1]),
+                       self.default_index())
         else:
             for i in range(self.timect-1):
                 if t < self.ttrans[i+1]:
-                    if i==0: idx=(ord(self.tindex[0]),ord(self.tindex[1]),
-                                  self.default_index())
-                    else:    idx=(ord(self.tindex[i]),ord(self.tindex[i+1]),
-                                  ord(self.tindex[i-1]))
+                    idx = (ord(self.tindex[i]),
+                           ord(self.tindex[i+1]),
+                           self.default_index() if i == 0 else ord(self.tindex[i-1]))
                     break
         return idx
 
-    def info(self,t=None):
-        idx=self.index(t)[0]
-        zs =self.az[self.tinfo[idx][2]:]
-        return self.tinfo[idx][0],self.tinfo[idx][1],zs[: zs.find('\000')]
+    def info(self, t=None):
+        idx = self.index(t)[0]
+        zs = self.az[self.tinfo[idx][2]:]
+        return self.tinfo[idx][0], self.tinfo[idx][1], zs[: zs.find('\000')]
 
 
 
 
-class _cache:
+class _cache(object):
 
-    _zlst=['Brazil/Acre','Brazil/DeNoronha','Brazil/East',
-           'Brazil/West','Canada/Atlantic','Canada/Central',
-           'Canada/Eastern','Canada/East-Saskatchewan',
-           'Canada/Mountain','Canada/Newfoundland',
-           'Canada/Pacific','Canada/Yukon',
-           'Chile/Continental','Chile/EasterIsland','CST','Cuba',
-           'Egypt','EST','GB-Eire','Greenwich','Hongkong','Iceland',
-           'Iran','Israel','Jamaica','Japan','Mexico/BajaNorte',
-           'Mexico/BajaSur','Mexico/General','MST','Poland','PST',
-           'Singapore','Turkey','Universal','US/Alaska','US/Aleutian',
-           'US/Arizona','US/Central','US/Eastern','US/East-Indiana',
-           'US/Hawaii','US/Indiana-Starke','US/Michigan',
-           'US/Mountain','US/Pacific','US/Samoa','UTC','UCT','GMT',
+    _zlst = [
+        'Brazil/Acre', 'Brazil/DeNoronha', 'Brazil/East',
+        'Brazil/West', 'Canada/Atlantic', 'Canada/Central',
+        'Canada/Eastern', 'Canada/East-Saskatchewan',
+        'Canada/Mountain', 'Canada/Newfoundland',
+        'Canada/Pacific', 'Canada/Yukon',
+        'Chile/Continental', 'Chile/EasterIsland', 'CST', 'Cuba',
+        'Egypt', 'EST', 'GB-Eire', 'Greenwich', 'Hongkong', 'Iceland',
+        'Iran', 'Israel', 'Jamaica', 'Japan', 'Mexico/BajaNorte',
+        'Mexico/BajaSur', 'Mexico/General', 'MST', 'Poland', 'PST',
+        'Singapore', 'Turkey', 'Universal', 'US/Alaska', 'US/Aleutian',
+        'US/Arizona', 'US/Central', 'US/Eastern', 'US/East-Indiana',
+        'US/Hawaii', 'US/Indiana-Starke', 'US/Michigan',
+        'US/Mountain', 'US/Pacific', 'US/Samoa', 'UTC', 'UCT', 'GMT',
 
-           'GMT+0100','GMT+0200','GMT+0300','GMT+0400','GMT+0500',
-           'GMT+0600','GMT+0700','GMT+0800','GMT+0900','GMT+1000',
-           'GMT+1100','GMT+1200','GMT+1300','GMT-0100','GMT-0200',
-           'GMT-0300','GMT-0400','GMT-0500','GMT-0600','GMT-0700',
-           'GMT-0800','GMT-0900','GMT-1000','GMT-1100','GMT-1200',
-           'GMT+1',
+        'GMT+0100', 'GMT+0200', 'GMT+0300', 'GMT+0400', 'GMT+0500',
+        'GMT+0600', 'GMT+0700', 'GMT+0800', 'GMT+0900', 'GMT+1000',
+        'GMT+1100', 'GMT+1200', 'GMT+1300', 'GMT-0100', 'GMT-0200',
+        'GMT-0300', 'GMT-0400', 'GMT-0500', 'GMT-0600', 'GMT-0700',
+        'GMT-0800', 'GMT-0900', 'GMT-1000', 'GMT-1100', 'GMT-1200',
+        'GMT+1',
 
-           'GMT+0130', 'GMT+0230', 'GMT+0330', 'GMT+0430', 'GMT+0530',
-           'GMT+0630', 'GMT+0730', 'GMT+0830', 'GMT+0930', 'GMT+1030',
-           'GMT+1130', 'GMT+1230',
+        'GMT+0130', 'GMT+0230', 'GMT+0330', 'GMT+0430', 'GMT+0530',
+        'GMT+0630', 'GMT+0730', 'GMT+0830', 'GMT+0930', 'GMT+1030',
+        'GMT+1130', 'GMT+1230',
 
-           'GMT-0130', 'GMT-0230', 'GMT-0330', 'GMT-0430', 'GMT-0530',
-           'GMT-0630', 'GMT-0730', 'GMT-0830', 'GMT-0930', 'GMT-1030',
-           'GMT-1130', 'GMT-1230',
+        'GMT-0130', 'GMT-0230', 'GMT-0330', 'GMT-0430', 'GMT-0530',
+        'GMT-0630', 'GMT-0730', 'GMT-0830', 'GMT-0930', 'GMT-1030',
+        'GMT-1130', 'GMT-1230',
 
-           'UT','BST','MEST','SST','FST','WADT','EADT','NZDT',
-           'WET','WAT','AT','AST','NT','IDLW','CET','MET',
-           'MEWT','SWT','FWT','EET','EEST','BT','ZP4','ZP5','ZP6',
-           'WAST','CCT','JST','EAST','GST','NZT','NZST','IDLE']
-
-
-    _zmap={'aest':'GMT+1000', 'aedt':'GMT+1100',
-           'aus eastern standard time':'GMT+1000',
-           'sydney standard time':'GMT+1000',
-           'tasmania standard time':'GMT+1000',
-           'e. australia standard time':'GMT+1000',
-           'aus central standard time':'GMT+0930',
-           'cen. australia standard time':'GMT+0930',
-           'w. australia standard time':'GMT+0800',
-
-           'brazil/acre':'Brazil/Acre',
-           'brazil/denoronha':'Brazil/Denoronha',
-           'brazil/east':'Brazil/East','brazil/west':'Brazil/West',
-           'canada/atlantic':'Canada/Atlantic',
-           'canada/central':'Canada/Central',
-           'canada/eastern':'Canada/Eastern',
-           'canada/east-saskatchewan':'Canada/East-Saskatchewan',
-           'canada/mountain':'Canada/Mountain',
-           'canada/newfoundland':'Canada/Newfoundland',
-           'canada/pacific':'Canada/Pacific','canada/yukon':'Canada/Yukon',
-           'central europe standard time':'GMT+0100',
-           'chile/continental':'Chile/Continental',
-           'chile/easterisland':'Chile/EasterIsland',
-           'cst':'US/Central','cuba':'Cuba','est':'US/Eastern','egypt':'Egypt',
-           'eastern standard time':'US/Eastern',
-           'us eastern standard time':'US/Eastern',
-           'central standard time':'US/Central',
-           'mountain standard time':'US/Mountain',
-           'pacific standard time':'US/Pacific',
-           'gb-eire':'GB-Eire','gmt':'GMT',
-
-           'gmt+0000':'GMT+0', 'gmt+0':'GMT+0',
+        'UT', 'BST', 'MEST', 'SST', 'FST', 'WADT', 'EADT', 'NZDT',
+        'WET', 'WAT', 'AT', 'AST', 'NT', 'IDLW', 'CET', 'MET',
+        'MEWT', 'SWT', 'FWT', 'EET', 'EEST', 'BT', 'ZP4', 'ZP5', 'ZP6',
+        'WAST', 'CCT', 'JST', 'EAST', 'GST', 'NZT', 'NZST', 'IDLE'
+    ]
 
 
-           'gmt+0100':'GMT+1', 'gmt+0200':'GMT+2', 'gmt+0300':'GMT+3',
-           'gmt+0400':'GMT+4', 'gmt+0500':'GMT+5', 'gmt+0600':'GMT+6',
-           'gmt+0700':'GMT+7', 'gmt+0800':'GMT+8', 'gmt+0900':'GMT+9',
-           'gmt+1000':'GMT+10','gmt+1100':'GMT+11','gmt+1200':'GMT+12',
-           'gmt+1300':'GMT+13',
-           'gmt-0100':'GMT-1', 'gmt-0200':'GMT-2', 'gmt-0300':'GMT-3',
-           'gmt-0400':'GMT-4', 'gmt-0500':'GMT-5', 'gmt-0600':'GMT-6',
-           'gmt-0700':'GMT-7', 'gmt-0800':'GMT-8', 'gmt-0900':'GMT-9',
-           'gmt-1000':'GMT-10','gmt-1100':'GMT-11','gmt-1200':'GMT-12',
+    _zmap = {
+        'aest':'GMT+1000', 'aedt':'GMT+1100',
+        'aus eastern standard time':'GMT+1000',
+        'sydney standard time':'GMT+1000',
+        'tasmania standard time':'GMT+1000',
+        'e. australia standard time':'GMT+1000',
+        'aus central standard time':'GMT+0930',
+        'cen. australia standard time':'GMT+0930',
+        'w. australia standard time':'GMT+0800',
 
-           'gmt+1': 'GMT+1', 'gmt+2': 'GMT+2', 'gmt+3': 'GMT+3',
-           'gmt+4': 'GMT+4', 'gmt+5': 'GMT+5', 'gmt+6': 'GMT+6',
-           'gmt+7': 'GMT+7', 'gmt+8': 'GMT+8', 'gmt+9': 'GMT+9',
-           'gmt+10':'GMT+10','gmt+11':'GMT+11','gmt+12':'GMT+12',
-           'gmt+13':'GMT+13',
-           'gmt-1': 'GMT-1', 'gmt-2': 'GMT-2', 'gmt-3': 'GMT-3',
-           'gmt-4': 'GMT-4', 'gmt-5': 'GMT-5', 'gmt-6': 'GMT-6',
-           'gmt-7': 'GMT-7', 'gmt-8': 'GMT-8', 'gmt-9': 'GMT-9',
-           'gmt-10':'GMT-10','gmt-11':'GMT-11','gmt-12':'GMT-12',
+        'brazil/acre':'Brazil/Acre',
+        'brazil/denoronha':'Brazil/Denoronha',
+        'brazil/east':'Brazil/East', 'brazil/west':'Brazil/West',
+        'canada/atlantic':'Canada/Atlantic',
+        'canada/central':'Canada/Central',
+        'canada/eastern':'Canada/Eastern',
+        'canada/east-saskatchewan':'Canada/East-Saskatchewan',
+        'canada/mountain':'Canada/Mountain',
+        'canada/newfoundland':'Canada/Newfoundland',
+        'canada/pacific':'Canada/Pacific', 'canada/yukon':'Canada/Yukon',
+        'central europe standard time':'GMT+0100',
+        'chile/continental':'Chile/Continental',
+        'chile/easterisland':'Chile/EasterIsland',
+        'cst':'US/Central', 'cuba':'Cuba', 'est':'US/Eastern', 'egypt':'Egypt',
+        'eastern standard time':'US/Eastern',
+        'us eastern standard time':'US/Eastern',
+        'central standard time':'US/Central',
+        'mountain standard time':'US/Mountain',
+        'pacific standard time':'US/Pacific',
+        'gb-eire':'GB-Eire', 'gmt':'GMT',
 
-           'gmt+130':'GMT+0130',  'gmt+0130':'GMT+0130',
-           'gmt+230':'GMT+0230',  'gmt+0230':'GMT+0230',
-           'gmt+330':'GMT+0330',  'gmt+0330':'GMT+0330',
-           'gmt+430':'GMT+0430',  'gmt+0430':'GMT+0430',
-           'gmt+530':'GMT+0530',  'gmt+0530':'GMT+0530',
-           'gmt+630':'GMT+0630',  'gmt+0630':'GMT+0630',
-           'gmt+730':'GMT+0730',  'gmt+0730':'GMT+0730',
-           'gmt+830':'GMT+0830',  'gmt+0830':'GMT+0830',
-           'gmt+930':'GMT+0930',  'gmt+0930':'GMT+0930',
-           'gmt+1030':'GMT+1030',
-           'gmt+1130':'GMT+1130',
-           'gmt+1230':'GMT+1230',
+        'gmt+0000':'GMT+0', 'gmt+0':'GMT+0',
 
-           'gmt-130':'GMT-0130',  'gmt-0130':'GMT-0130',
-           'gmt-230':'GMT-0230',  'gmt-0230':'GMT-0230',
-           'gmt-330':'GMT-0330',  'gmt-0330':'GMT-0330',
-           'gmt-430':'GMT-0430',  'gmt-0430':'GMT-0430',
-           'gmt-530':'GMT-0530',  'gmt-0530':'GMT-0530',
-           'gmt-630':'GMT-0630',  'gmt-0630':'GMT-0630',
-           'gmt-730':'GMT-0730',  'gmt-0730':'GMT-0730',
-           'gmt-830':'GMT-0830',  'gmt-0830':'GMT-0830',
-           'gmt-930':'GMT-0930',  'gmt-0930':'GMT-0930',
-           'gmt-1030':'GMT-1030',
-           'gmt-1130':'GMT-1130',
-           'gmt-1230':'GMT-1230',
 
-           'greenwich':'Greenwich','hongkong':'Hongkong',
-           'iceland':'Iceland','iran':'Iran','israel':'Israel',
-           'jamaica':'Jamaica','japan':'Japan',
-           'mexico/bajanorte':'Mexico/BajaNorte',
-           'mexico/bajasur':'Mexico/BajaSur','mexico/general':'Mexico/General',
-           'mst':'US/Mountain','pst':'US/Pacific','poland':'Poland',
-           'singapore':'Singapore','turkey':'Turkey','universal':'Universal',
-           'utc':'Universal','uct':'Universal','us/alaska':'US/Alaska',
-           'us/aleutian':'US/Aleutian','us/arizona':'US/Arizona',
-           'us/central':'US/Central','us/eastern':'US/Eastern',
-           'us/east-indiana':'US/East-Indiana','us/hawaii':'US/Hawaii',
-           'us/indiana-starke':'US/Indiana-Starke','us/michigan':'US/Michigan',
-           'us/mountain':'US/Mountain','us/pacific':'US/Pacific',
-           'us/samoa':'US/Samoa',
+        'gmt+0100':'GMT+1', 'gmt+0200':'GMT+2', 'gmt+0300':'GMT+3',
+        'gmt+0400':'GMT+4', 'gmt+0500':'GMT+5', 'gmt+0600':'GMT+6',
+        'gmt+0700':'GMT+7', 'gmt+0800':'GMT+8', 'gmt+0900':'GMT+9',
+        'gmt+1000':'GMT+10', 'gmt+1100':'GMT+11', 'gmt+1200':'GMT+12',
+        'gmt+1300':'GMT+13',
+        'gmt-0100':'GMT-1', 'gmt-0200':'GMT-2', 'gmt-0300':'GMT-3',
+        'gmt-0400':'GMT-4', 'gmt-0500':'GMT-5', 'gmt-0600':'GMT-6',
+        'gmt-0700':'GMT-7', 'gmt-0800':'GMT-8', 'gmt-0900':'GMT-9',
+        'gmt-1000':'GMT-10', 'gmt-1100':'GMT-11', 'gmt-1200':'GMT-12',
 
-           'ut':'Universal',
-           'bst':'GMT+1', 'mest':'GMT+2', 'sst':'GMT+2',
-           'fst':'GMT+2', 'wadt':'GMT+8', 'eadt':'GMT+11', 'nzdt':'GMT+13',
-           'wet':'GMT', 'wat':'GMT-1', 'at':'GMT-2', 'ast':'GMT-4',
-           'nt':'GMT-11', 'idlw':'GMT-12', 'cet':'GMT+1', 'cest':'GMT+2',
-           'met':'GMT+1',
-           'mewt':'GMT+1', 'swt':'GMT+1', 'fwt':'GMT+1', 'eet':'GMT+2',
-           'eest':'GMT+3',
-           'bt':'GMT+3', 'zp4':'GMT+4', 'zp5':'GMT+5', 'zp6':'GMT+6',
-           'wast':'GMT+7', 'cct':'GMT+8', 'jst':'GMT+9', 'east':'GMT+10',
-           'gst':'GMT+10', 'nzt':'GMT+12', 'nzst':'GMT+12', 'idle':'GMT+12',
-           'ret':'GMT+4'
-           }
+        'gmt+1': 'GMT+1', 'gmt+2': 'GMT+2', 'gmt+3': 'GMT+3',
+        'gmt+4': 'GMT+4', 'gmt+5': 'GMT+5', 'gmt+6': 'GMT+6',
+        'gmt+7': 'GMT+7', 'gmt+8': 'GMT+8', 'gmt+9': 'GMT+9',
+        'gmt+10':'GMT+10', 'gmt+11':'GMT+11', 'gmt+12':'GMT+12',
+        'gmt+13':'GMT+13',
+        'gmt-1': 'GMT-1', 'gmt-2': 'GMT-2', 'gmt-3': 'GMT-3',
+        'gmt-4': 'GMT-4', 'gmt-5': 'GMT-5', 'gmt-6': 'GMT-6',
+        'gmt-7': 'GMT-7', 'gmt-8': 'GMT-8', 'gmt-9': 'GMT-9',
+        'gmt-10':'GMT-10', 'gmt-11':'GMT-11', 'gmt-12':'GMT-12',
+
+        'gmt+130':'GMT+0130', 'gmt+0130':'GMT+0130',
+        'gmt+230':'GMT+0230', 'gmt+0230':'GMT+0230',
+        'gmt+330':'GMT+0330', 'gmt+0330':'GMT+0330',
+        'gmt+430':'GMT+0430', 'gmt+0430':'GMT+0430',
+        'gmt+530':'GMT+0530', 'gmt+0530':'GMT+0530',
+        'gmt+630':'GMT+0630', 'gmt+0630':'GMT+0630',
+        'gmt+730':'GMT+0730', 'gmt+0730':'GMT+0730',
+        'gmt+830':'GMT+0830', 'gmt+0830':'GMT+0830',
+        'gmt+930':'GMT+0930', 'gmt+0930':'GMT+0930',
+        'gmt+1030':'GMT+1030',
+        'gmt+1130':'GMT+1130',
+        'gmt+1230':'GMT+1230',
+
+        'gmt-130':'GMT-0130', 'gmt-0130':'GMT-0130',
+        'gmt-230':'GMT-0230', 'gmt-0230':'GMT-0230',
+        'gmt-330':'GMT-0330', 'gmt-0330':'GMT-0330',
+        'gmt-430':'GMT-0430', 'gmt-0430':'GMT-0430',
+        'gmt-530':'GMT-0530', 'gmt-0530':'GMT-0530',
+        'gmt-630':'GMT-0630', 'gmt-0630':'GMT-0630',
+        'gmt-730':'GMT-0730', 'gmt-0730':'GMT-0730',
+        'gmt-830':'GMT-0830', 'gmt-0830':'GMT-0830',
+        'gmt-930':'GMT-0930', 'gmt-0930':'GMT-0930',
+        'gmt-1030':'GMT-1030',
+        'gmt-1130':'GMT-1130',
+        'gmt-1230':'GMT-1230',
+
+        'greenwich':'Greenwich', 'hongkong':'Hongkong',
+        'iceland':'Iceland', 'iran':'Iran', 'israel':'Israel',
+        'jamaica':'Jamaica', 'japan':'Japan',
+        'mexico/bajanorte':'Mexico/BajaNorte',
+        'mexico/bajasur':'Mexico/BajaSur', 'mexico/general':'Mexico/General',
+        'mst':'US/Mountain', 'pst':'US/Pacific', 'poland':'Poland',
+        'singapore':'Singapore', 'turkey':'Turkey', 'universal':'Universal',
+        'utc':'Universal', 'uct':'Universal', 'us/alaska':'US/Alaska',
+        'us/aleutian':'US/Aleutian', 'us/arizona':'US/Arizona',
+        'us/central':'US/Central', 'us/eastern':'US/Eastern',
+        'us/east-indiana':'US/East-Indiana', 'us/hawaii':'US/Hawaii',
+        'us/indiana-starke':'US/Indiana-Starke', 'us/michigan':'US/Michigan',
+        'us/mountain':'US/Mountain', 'us/pacific':'US/Pacific',
+        'us/samoa':'US/Samoa',
+
+        'ut':'Universal',
+        'bst':'GMT+1', 'mest':'GMT+2', 'sst':'GMT+2',
+        'fst':'GMT+2', 'wadt':'GMT+8', 'eadt':'GMT+11', 'nzdt':'GMT+13',
+        'wet':'GMT', 'wat':'GMT-1', 'at':'GMT-2', 'ast':'GMT-4',
+        'nt':'GMT-11', 'idlw':'GMT-12', 'cet':'GMT+1', 'cest':'GMT+2',
+        'met':'GMT+1',
+        'mewt':'GMT+1', 'swt':'GMT+1', 'fwt':'GMT+1', 'eet':'GMT+2',
+        'eest':'GMT+3',
+        'bt':'GMT+3', 'zp4':'GMT+4', 'zp5':'GMT+5', 'zp6':'GMT+6',
+        'wast':'GMT+7', 'cct':'GMT+8', 'jst':'GMT+9', 'east':'GMT+10',
+        'gst':'GMT+10', 'nzt':'GMT+12', 'nzst':'GMT+12', 'idle':'GMT+12',
+        'ret':'GMT+4'
+    }
 
     def __init__(self):
         self._db = _data
-        self._d, self._zidx= {}, self._zmap.keys()
+        self._d, self._zidx = {}, self._zmap.keys()
 
-    def __getitem__(self,k):
-        try:   n=self._zmap[k.lower()]
+    def __getitem__(self, k):
+        try:
+            n = self._zmap[k.lower()]
         except KeyError:
-            if numericTimeZoneMatch(k) == None:
+            if numericTimeZoneMatch(k) is None:
                 raise DateTimeError('Unrecognized timezone: %s' % k)
             return k
         try:
@@ -301,7 +317,7 @@ class _cache:
             return z
 
 def _findLocalTimeZoneName(isDST):
-    if not _time.daylight:
+    if not _time.daylight: # pragma: no cover
         # Daylight savings does not occur in this time zone.
         isDST = 0
     try:
@@ -311,19 +327,17 @@ def _findLocalTimeZoneName(isDST):
     except KeyError:
         try:
             # Generate a GMT-offset zone name.
-            if isDST:
-                localzone = _time.altzone
-            else:
-                localzone = _time.timezone
-            offset=(-localzone/(60*60))
-            majorOffset=int(offset)
-            if majorOffset != 0 :
-                minorOffset=abs(int((offset % majorOffset) * 60.0))
-            else: minorOffset = 0
-            m=majorOffset >= 0 and '+' or ''
-            lz='%s%0.02d%0.02d' % (m, majorOffset, minorOffset)
+            localzone = _time.altzone if isDST else _time.timezone
+
+            offset = (-localzone / (60 * 60))
+            majorOffset = int(offset)
+            minorOffset = 0
+            if majorOffset != 0: # pragma: no cover
+                minorOffset = abs(int((offset % majorOffset) * 60.0))
+            m = '+' if majorOffset >= 0 else ''
+            lz = '%s%0.02d%0.02d' % (m, majorOffset, minorOffset)
             _localzone = _cache._zmap[('GMT%s' % lz).lower()]
-        except:
+        except Exception:
             _localzone = ''
     return _localzone
 
@@ -343,11 +357,11 @@ def _calcDependentSecond(tz, t):
     fset = _tzoffset(tz, t)
     return fset + int(math.floor(t)) + EPOCH - 86400
 
-def _calcDependentSecond2(yr,mo,dy,hr,mn,sc):
+def _calcDependentSecond2(yr, mo, dy, hr, mn, sc):
     # Calculates the timezone-dependent second (integer part only)
     # from the date given.
     ss = int(hr) * 3600 + int(mn) * 60 + int(sc)
-    x = int(_julianday(yr,mo,dy)-jd1901) * 86400 + ss
+    x = int(_julianday(yr, mo, dy) - jd1901) * 86400 + ss
     return x
 
 def _calcIndependentSecondEtc(tz, x, ms):
@@ -361,10 +375,9 @@ def _calcIndependentSecondEtc(tz, x, ms):
     x_adjusted = x - fset + ms
     d = x_adjusted / 86400.0
     t = x_adjusted - EPOCH + 86400
-    millis = (x + 86400 - fset) * 1000 + \
-             ms * 1000 - EPOCH * 1000
+    millis = (x + 86400 - fset) * 1000 + ms * 1000 - EPOCH * 1000
     s = d - math.floor(d)
-    return s,d,t,millis
+    return s, d, t, millis
 
 def _calcHMS(x, ms):
     # hours, minutes, seconds from integer and float.
@@ -372,58 +385,62 @@ def _calcHMS(x, ms):
     x = x - hr * 3600
     mn = x // 60
     sc = x - mn * 60 + ms
-    return hr,mn,sc
+    return hr, mn, sc
 
 def _calcYMDHMS(x, ms):
     # x is a timezone-dependent integer of seconds.
     # Produces yr,mo,dy,hr,mn,sc.
-    yr,mo,dy=_calendarday(x / 86400 + jd1901)
+    yr, mo, dy = _calendarday(x / 86400 + jd1901)
     x = int(x - (x / 86400) * 86400)
     hr = x / 3600
     x = x - hr * 3600
     mn = x / 60
     sc = x - mn * 60 + ms
-    return yr,mo,dy,hr,mn,sc
+    return yr, mo, dy, hr, mn, sc
 
-def _julianday(y,m,d):
+def _julianday(y, m, d):
     if m > 12:
-        y=y+m//12
-        m=m%12
+        y = y + m // 12
+        m = m % 12
     elif m < 1:
-        m=-m
-        y=y-m//12-1
-        m=12-m%12
-    if y > 0: yr_correct=0
-    else:      yr_correct=3
-    if m < 3: y, m=y-1,m+12
-    if y*10000+m*100+d > 15821014: b=2-y//100+y//400
-    else: b=0
-    return (1461*y-yr_correct)//4+306001*(m+1)//10000+d+1720994+b
+        m = -m
+        y = y - m // 12 - 1
+        m = 12 - m % 12
+    if y > 0:
+        yr_correct = 0
+    else:
+        yr_correct = 3
+    if m < 3:
+        y, m = y - 1, m + 12
+    if y * 10000 + m * 100 + d > 15821014:
+        b = 2 - y // 100 + y // 400
+    else:
+        b = 0
+    return (1461 * y - yr_correct) // 4 + 306001 * (m + 1) // 10000 + d + 1720994 + b
 
 def _calendarday(j):
-    if(j < 2299160):
-        b=j+1525
+    if j < 2299160:
+        b = j + 1525
     else:
-        a=(4*j-7468861)/146097
-        b=j+1526+a-a/4
-    c=(20*b-2442)/7305
-    d=1461*c/4
-    e=10000*(b-d)/306001
-    dy=int(b-d-306001*e/10000)
-    mo=(e < 14) and int(e-1) or int(e-13)
-    yr=(mo > 2) and (c-4716) or (c-4715)
-    return int(yr),int(mo),int(dy)
+        a = (4 * j - 7468861) / 146097
+        b = j + 1526 + a - a / 4
+    c = (20 * b - 2442) / 7305
+    d = 1461 * c / 4
+    e = 10000 * (b - d) / 306001
+    dy = int(b - d - 306001 * e / 10000)
+    mo = int(e - 1) if e < 14 else int(e - 13)
+    yr = (c - 4716) if mo > 2 else (c - 4715)
+    return int(yr), int(mo), int(dy)
 
 def _tzoffset(tz, t):
     try:
         return DateTimeParser._tzinfo[tz].info(t)[0]
-    except:
+    except Exception:
         if numericTimeZoneMatch(tz) is not None:
             offset = int(tz[1:3])*3600+int(tz[3:5])*60
             if tz[0] == '-':
                 return -offset
-            else:
-                return offset
+            return offset
         else:
             return 0 # Assume UTC
 
@@ -455,7 +472,7 @@ def safelocaltime(t):
                         'of this Python implementation.' % float(t))
     return _time.localtime(t_int)
 
-class DateTimeParser:
+class DateTimeParser(object):
 
     def parse(self, arg, local=True):
         """Parse a string containing some sort of date-time data.
@@ -527,15 +544,15 @@ class DateTimeParser:
         if not arg:
             raise SyntaxError(arg)
 
-        if arg.find(' ')==-1 and len(arg) >= 5 and arg[4]=='-':
-            yr,mo,dy,hr,mn,sc,tz=self._parse_iso8601(arg)
+        if arg.find(' ') == -1 and len(arg) >= 5 and arg[4] == '-':
+            yr, mo, dy, hr, mn, sc, tz = self._parse_iso8601(arg)
         else:
-            yr,mo,dy,hr,mn,sc,tz=self._parse(arg, local)
+            yr, mo, dy, hr, mn, sc, tz = self._parse(arg, local)
 
 
-        if not self._validDate(yr,mo,dy):
+        if not self._validDate(yr, mo, dy):
             raise DateError(arg, yr, mo, dy)
-        if not self._validTime(hr,mn,int(sc)):
+        if not self._validTime(hr, mn, int(sc)):
             raise TimeError(arg)
 
         return yr, mo, dy, hr, mn, sc, tz
@@ -551,68 +568,76 @@ class DateTimeParser:
         yr, mo, dy, hr, mn, sc, tz = self.parse(arg)
 
         ms = sc - math.floor(sc)
-        x = _calcDependentSecond2(yr,mo,dy,hr,mn,sc)
+        x = _calcDependentSecond2(yr, mo, dy, hr, mn, sc)
 
         if tz:
             try:
-                tz=self._tzinfo._zmap[tz.lower()]
+                tz = self._tzinfo._zmap[tz.lower()]
             except KeyError:
                 if numericTimeZoneMatch(tz) is None:
                     raise DateTimeError('Unknown time zone in date: %s' % arg)
         else:
             tz = self._calcTimezoneName(x, ms)
-        s,d,t,millisecs = _calcIndependentSecondEtc(tz, x, ms)
 
+        _s, _d, t, _millisecs = _calcIndependentSecondEtc(tz, x, ms)
         return t
 
 
-    int_pattern  =re.compile(r'([0-9]+)') #AJ
-    flt_pattern  =re.compile(r':([0-9]+\.[0-9]+)') #AJ
-    name_pattern =re.compile(r'([a-zA-Z]+)', re.I) #AJ
-    space_chars  =' \t\n'
-    delimiters   ='-/.:,+'
-    _month_len  =((0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
-                  (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31))
-    _until_month=((0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334),
-                  (0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335))
-    _monthmap   ={'january': 1,   'jan': 1,
-                  'february': 2,  'feb': 2,
-                  'march': 3,     'mar': 3,
-                  'april': 4,     'apr': 4,
-                  'may': 5,
-                  'june': 6,      'jun': 6,
-                  'july': 7,      'jul': 7,
-                  'august': 8,    'aug': 8,
-                  'september': 9, 'sep': 9, 'sept': 9,
-                  'october': 10,  'oct': 10,
-                  'november': 11, 'nov': 11,
-                  'december': 12, 'dec': 12}
-    _daymap     ={'sunday': 1,    'sun': 1,
-                  'monday': 2,    'mon': 2,
-                  'tuesday': 3,   'tues': 3,  'tue': 3,
-                  'wednesday': 4, 'wed': 4,
-                  'thursday': 5,  'thurs': 5, 'thur': 5, 'thu': 5,
-                  'friday': 6,    'fri': 6,
-                  'saturday': 7,  'sat': 7}
+    int_pattern = re.compile(r'([0-9]+)') #AJ
+    flt_pattern = re.compile(r':([0-9]+\.[0-9]+)') #AJ
+    name_pattern = re.compile(r'([a-zA-Z]+)', re.I) #AJ
+    space_chars = ' \t\n'
+    delimiters = '-/.:,+'
+    _month_len = (
+        (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
+        (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    )
+    _until_month = (
+        (0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334),
+        (0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)
+    )
+    _monthmap = {
+        'january': 1, 'jan': 1,
+        'february': 2, 'feb': 2,
+        'march': 3, 'mar': 3,
+        'april': 4, 'apr': 4,
+        'may': 5,
+        'june': 6, 'jun': 6,
+        'july': 7, 'jul': 7,
+        'august': 8, 'aug': 8,
+        'september': 9, 'sep': 9, 'sept': 9,
+        'october': 10, 'oct': 10,
+        'november': 11, 'nov': 11,
+        'december': 12, 'dec': 12
+    }
+    _daymap = {
+        'sunday': 1, 'sun': 1,
+        'monday': 2, 'mon': 2,
+        'tuesday': 3, 'tues': 3, 'tue': 3,
+        'wednesday': 4, 'wed': 4,
+        'thursday': 5, 'thurs': 5, 'thur': 5, 'thu': 5,
+        'friday': 6, 'fri': 6,
+        'saturday': 7, 'sat': 7
+    }
 
     _localzone0 = _findLocalTimeZoneName(0)
     _localzone1 = _findLocalTimeZoneName(1)
     _multipleZones = (_localzone0 != _localzone1)
     # For backward compatibility only:
     _isDST = _time.localtime()[8]
-    _localzone = _isDST and _localzone1 or _localzone0
+    _localzone = _localzone1 if _isDST else  _localzone0
 
-    _tzinfo    = _cache()
+    _tzinfo = _cache()
 
     def localZone(self, ltm=None):
         '''Returns the time zone on the given date.  The time zone
         can change according to daylight savings.'''
         if not self._multipleZones:
             return self._localzone0
-        if ltm == None:
-            ltm = _time.localtime()
+
+        ltm = _time.localtime() if ltm is None else ltm
         isDST = ltm[8]
-        lz = isDST and self._localzone1 or self._localzone0
+        lz = self._localzone1 if isDST else self._localzone0
         return lz
 
     def _calcTimezoneName(self, x, ms):
@@ -625,14 +650,14 @@ class DateTimeParser:
         # nearTime is within an hour of being correct.
         try:
             ltm = safelocaltime(nearTime)
-        except:
+        except Exception:
             # We are beyond the range of Python's date support.
             # Hopefully we can assume that daylight savings schedules
             # repeat every 28 years.  Calculate the name of the
             # time zone using a supported range of years.
-            yr,mo,dy,hr,mn,sc = _calcYMDHMS(x, 0)
+            yr, mo, dy, hr, mn, sc = _calcYMDHMS(x, 0)
             yr = ((yr - 1970) % 28) + 1970
-            x = _calcDependentSecond2(yr,mo,dy,hr,mn,sc)
+            x = _calcDependentSecond2(yr, mo, dy, hr, mn, sc)
             nearTime = x - fsetAtEpoch - EPOCH + 86400 + ms
             ltm = safelocaltime(nearTime)
         tz = self.localZone(ltm)
@@ -641,15 +666,15 @@ class DateTimeParser:
     def _parse(self, string, local=True):
         # Parse date-time components from a string
         month = year = tz = tm = None
-        spaces         = self.space_chars
-        intpat         = self.int_pattern
-        fltpat         = self.flt_pattern
-        wordpat        = self.name_pattern
-        delimiters     = self.delimiters
-        MonthNumbers   = self._monthmap
+        spaces = self.space_chars
+        intpat = self.int_pattern
+        fltpat = self.flt_pattern
+        wordpat = self.name_pattern
+        delimiters = self.delimiters
+        MonthNumbers = self._monthmap
         DayOfWeekNames = self._daymap
-        ValidZones     = self._tzinfo._zidx
-        TimeModifiers  = ['am','pm']
+        ValidZones = self._tzinfo._zidx
+        TimeModifiers = ['am', 'pm']
 
         string = string.strip()
 
@@ -665,181 +690,200 @@ class DateTimeParser:
             tz = tz[:3]+tz[4:]
         else:
             # Look at last token
-            sp=string.split()
+            sp = string.split()
             tz = sp[-1]
             if tz and (tz.lower() in ValidZones):
-                string=' '.join(sp[:-1])
+                string = ' '.join(sp[:-1])
             else:
                 tz = None  # Decide later, since the default time zone
                            # could depend on the date.
 
-        ints,dels=[],[]
-        i,l=0,len(string)
+        ints = []
+        i, l = 0, len(string)
         while i < l:
-            while i < l and string[i] in spaces    : i=i+1
+            while i < l and string[i] in spaces:
+                i = i + 1
             if i < l and string[i] in delimiters:
-                d=string[i]
-                i=i+1
-            else: d=''
-            while i < l and string[i] in spaces    : i=i+1
+                d = string[i]
+                i = i + 1
+            else:
+                d = ''
+            while i < l and string[i] in spaces:
+                i = i + 1
 
             # The float pattern needs to look back 1 character, because it
             # actually looks for a preceding colon like ':33.33'. This is
             # needed to avoid accidentally matching the date part of a
             # dot-separated date string such as '1999.12.31'.
-            if i > 0: b=i-1
-            else: b=i
+            if i > 0:
+                b = i - 1
+            else:
+                b = i
 
             ts_results = fltpat.match(string, b)
             if ts_results:
-                s=ts_results.group(1)
-                i=i+len(s)
+                s = ts_results.group(1)
+                i = i + len(s)
                 ints.append(float(s))
                 continue
 
             #AJ
             ts_results = intpat.match(string, i)
             if ts_results:
-                s=ts_results.group(0)
+                s = ts_results.group(0)
 
-                ls=len(s)
-                i=i+ls
-                if (ls==4 and d and d in '+-' and
+                ls = len(s)
+                i = i + ls
+                if (ls == 4 and d and d in '+-' and
                     (len(ints) + (not not month) >= 3)):
-                    tz='%s%s' % (d,s)
+                    tz = '%s%s' % (d, s)
                 else:
-                    v=int(s)
+                    v = int(s)
                     ints.append(v)
                 continue
 
 
             ts_results = wordpat.match(string, i)
             if ts_results:
-                o,s=ts_results.group(0),ts_results.group(0).lower()
-                i=i+len(s)
-                if i < l and string[i]=='.': i=i+1
+                o = ts_results.group(0)
+                s = o.lower()
+                i = i + len(s)
+                if i < l and string[i] == '.':
+                    i = i + 1
                 # Check for month name:
                 if s in MonthNumbers:
-                    v=MonthNumbers[s]
-                    if month is None: month=v
-                    else: raise SyntaxError(string)
-                    continue
+                    v = MonthNumbers[s]
+                    if month is None:
+                        month = v
+                    else:
+                        raise SyntaxError(string)
+                    continue # pragma: no cover
                 # Check for time modifier:
                 if s in TimeModifiers:
-                    if tm is None: tm=s
-                    else: raise SyntaxError(string)
-                    continue
+                    if tm is None:
+                        tm = s
+                    else:
+                        raise SyntaxError(string)
+                    continue # pragma: no cover
                 # Check for and skip day of week:
                 if s in DayOfWeekNames:
                     continue
             raise SyntaxError(string)
 
-        day=None
-        if ints[-1] > 60 and d not in ['.',':'] and len(ints) > 2:
-            year=ints[-1]
+        day = None
+        if ints[-1] > 60 and d not in ['.', ':'] and len(ints) > 2:
+            year = ints[-1]
             del ints[-1]
             if month:
-                day=ints[0]
+                day = ints[0]
                 del ints[:1]
             else:
-                month=ints[0]
-                day=ints[1]
+                month = ints[0]
+                day = ints[1]
                 del ints[:2]
         elif month:
             if len(ints) > 1:
                 if ints[0] > 31:
-                    year=ints[0]
-                    day=ints[1]
+                    year = ints[0]
+                    day = ints[1]
                 else:
-                    year=ints[1]
-                    day=ints[0]
+                    year = ints[1]
+                    day = ints[0]
                 del ints[:2]
         elif len(ints) > 2:
             if ints[0] > 31:
-                year=ints[0]
+                year = ints[0]
                 if ints[1] > 12:
-                    day=ints[1]
-                    month=ints[2]
+                    day = ints[1]
+                    month = ints[2]
                 else:
-                    day=ints[2]
-                    month=ints[1]
+                    day = ints[2]
+                    month = ints[1]
             if ints[1] > 31:
-                year=ints[1]
+                year = ints[1]
                 if ints[0] > 12 and ints[2] <= 12:
-                    day=ints[0]
-                    month=ints[2]
+                    day = ints[0]
+                    month = ints[2]
                 elif ints[2] > 12 and ints[0] <= 12:
-                    day=ints[2]
-                    month=ints[0]
+                    day = ints[2]
+                    month = ints[0]
             elif ints[2] > 31:
-                year=ints[2]
+                year = ints[2]
                 if ints[0] > 12:
-                    day=ints[0]
-                    month=ints[1]
+                    day = ints[0]
+                    month = ints[1]
                 else:
-                    day=ints[1]
-                    month=ints[0]
+                    day = ints[1]
+                    month = ints[0]
             elif ints[0] <= 12:
-                month=ints[0]
-                day=ints[1]
-                year=ints[2]
+                month = ints[0]
+                day = ints[1]
+                year = ints[2]
             del ints[:3]
 
         if day is None:
             # Use today's date.
-            year,month,day = _time.localtime()[:3]
+            year, month, day = _time.localtime()[:3]
 
         year = _correctYear(year)
-        if year < 1000: raise SyntaxError(string)
+        if year < 1000:
+            raise SyntaxError(string)
 
-        leap = year%4==0 and (year%100!=0 or year%400==0)
+        leap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
         try:
             if not day or day > self._month_len[leap][month]:
                 raise DateError(string)
         except IndexError:
             raise DateError(string)
-        tod=0
+        tod = 0
         if ints:
-            i=ints[0]
+            i = ints[0]
             # Modify hour to reflect am/pm
-            if tm and (tm=='pm') and i<12:  i=i+12
-            if tm and (tm=='am') and i==12: i=0
-            if i > 24: raise DateTimeError(string)
+            if tm and (tm == 'pm') and i < 12:
+                i = i + 12
+            if tm and (tm == 'am') and i == 12:
+                i = 0
+            if i > 24:
+                raise DateTimeError(string)
             tod = tod + int(i) * 3600
             del ints[0]
             if ints:
-                i=ints[0]
-                if i > 60: raise DateTimeError(string)
+                i = ints[0]
+                if i > 60:
+                    raise DateTimeError(string)
                 tod = tod + int(i) * 60
                 del ints[0]
                 if ints:
-                    i=ints[0]
-                    if i > 60: raise DateTimeError(string)
+                    i = ints[0]
+                    if i > 60:
+                        raise DateTimeError(string)
                     tod = tod + i
                     del ints[0]
-                    if ints: raise SyntaxError(string)
+                    if ints:
+                        raise SyntaxError(string)
 
 
         tod_int = int(math.floor(tod))
         ms = tod - tod_int
-        hr,mn,sc = _calcHMS(tod_int, ms)
+        hr, mn, sc = _calcHMS(tod_int, ms)
 
         if local and not tz:
             # Figure out what time zone it is in the local area
             # on the given date.
-            x = _calcDependentSecond2(year,month,day,hr,mn,sc)
+            x = _calcDependentSecond2(year, month, day, hr, mn, sc)
             tz = self._calcTimezoneName(x, ms)
 
-        return year,month,day,hr,mn,sc,tz
+        return year, month, day, hr, mn, sc, tz
 
-    def _validDate(self,y,m,d):
-        if m<1 or m>12 or y<0 or d<1 or d>31: return 0
-        return d<=self._month_len[(y%4==0 and (y%100!=0 or y%400==0))][m]
+    def _validDate(self, y, m, d):
+        if m < 1 or m > 12 or y < 0 or d < 1 or d > 31:
+            return 0
+        return d <= self._month_len[(y % 4 == 0 and (y % 100 != 0 or y % 400 == 0))][m]
 
-    def _validTime(self,h,m,s):
-        return h>=0 and h<=23 and m>=0 and m<=59 and s>=0 and s < 60
+    def _validTime(self, h, m, s):
+        return h >= 0 and h <= 23 and m >= 0 and m <= 59 and s >= 0 and s < 60
 
-    def _parse_iso8601(self,s):
+    def _parse_iso8601(self, s):
         try:
             return self.__parse_iso8601(s)
         except IndexError:
@@ -847,44 +891,54 @@ class DateTimeParser:
                 'Not an ISO 8601 compliant date string: "%s"' %  s)
 
 
-    def __parse_iso8601(self,s):
+    def __parse_iso8601(self, s):
         """Parse an ISO 8601 compliant date.
 
         TODO: Not all allowed formats are recognized (for some examples see
         http://www.cl.cam.ac.uk/~mgk25/iso-time.html).
         """
-        year=0
-        month=day=1
-        hour=minute=seconds=hour_off=min_off=0
-        tzsign='+'
+        year = 0
+        month = day = 1
+        hour = minute = seconds = hour_off = min_off = 0
+        tzsign = '+'
 
         datereg = re.compile(
             '([0-9]{4})(-([0-9][0-9]))?(-([0-9][0-9]))?')
         timereg = re.compile(
-            '([0-9]{2})(:([0-9][0-9]))?(:([0-9][0-9]))?(\.[0-9]{1,20})?'
-            '(\s*([-+])([0-9]{2})(:?([0-9]{2}))?)?')
+            r'([0-9]{2})(:([0-9][0-9]))?(:([0-9][0-9]))?(\.[0-9]{1,20})?'
+            r'(\s*([-+])([0-9]{2})(:?([0-9]{2}))?)?')
 
         # Date part
 
         fields = datereg.split(s.strip())
-        if fields[1]:   year  = int(fields[1])
-        if fields[3]:   month = int(fields[3])
-        if fields[5]:   day   = int(fields[5])
+        if fields[1]:
+            year = int(fields[1])
+        if fields[3]:
+            month = int(fields[3])
+        if fields[5]:
+            day = int(fields[5])
 
-        if s.find('T')>-1:
+        if s.find('T') > -1:
             fields = timereg.split(s[s.find('T')+1:])
 
-            if fields[1]:   hour     = int(fields[1])
-            if fields[3]:   minute   = int(fields[3])
-            if fields[5]:   seconds  = int(fields[5])
-            if fields[6]:   seconds  = seconds+float(fields[6])
+            if fields[1]:
+                hour = int(fields[1])
+            if fields[3]:
+                minute = int(fields[3])
+            if fields[5]:
+                seconds = int(fields[5])
+            if fields[6]:
+                seconds = seconds + float(fields[6])
 
-            if fields[8]:   tzsign   = fields[8]
-            if fields[9]:   hour_off = int(fields[9])
-            if fields[11]:  min_off  = int(fields[11])
+            if fields[8]:
+                tzsign = fields[8]
+            if fields[9]:
+                hour_off = int(fields[9])
+            if fields[11]:
+                min_off = int(fields[11])
 
-        return (year,month,day,hour,minute,seconds,
-                '%s%02d%02d' % (tzsign,hour_off,min_off))
+        return (year, month, day, hour, minute, seconds,
+                '%s%02d%02d' % (tzsign, hour_off, min_off))
 
 parser = DateTimeParser()
 parse = parser.parse
@@ -893,11 +947,9 @@ time = parser.time
 ######################################################################
 # Time-zone info based soley on offsets
 #
-# Share tzinfos for the same offset 
+# Share tzinfos for the same offset
 
-from datetime import tzinfo as _tzinfo, timedelta as _timedelta
-
-class _tzinfo(_tzinfo):
+class _tzinfo(_std_tzinfo):
 
     def __init__(self, minutes):
         if abs(minutes) > 1439:
@@ -917,11 +969,13 @@ class _tzinfo(_tzinfo):
     def tzname(self, dt):
         return None
 
-    def __repr__(self):
+    def __repr__(self): # pragma: no cover
         return 'tzinfo(%d)' % self.__minutes
 
 
-def tzinfo(offset, _tzinfos = {}):
+_tzinfos = {}
+
+def tzinfo(offset):
 
     info = _tzinfos.get(offset)
     if info is None:
@@ -938,7 +992,6 @@ tzinfo.__safe_for_unpickling__ = True
 #
 ######################################################################
 
-from datetime import datetime as _datetime
 
 def parseDatetimetz(string, local=True):
     y, mo, d, h, m, s, tz = parse(string, local)
@@ -951,4 +1004,4 @@ def parseDatetimetz(string, local=True):
         _tzinfo = None
     return _datetime(y, mo, d, int(h), int(m), int(s), int(micro), _tzinfo)
 
-_iso_tz_re = re.compile("[-+]\d\d:\d\d$")
+_iso_tz_re = re.compile(r"[-+]\d\d:\d\d$")

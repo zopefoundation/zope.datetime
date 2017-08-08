@@ -1,1 +1,7 @@
 include *.txt
+include *.py
+include *.rst
+include buildout.cfg
+include tox.ini
+include .travis.yml
+include .coveragerc
