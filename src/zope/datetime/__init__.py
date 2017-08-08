@@ -15,6 +15,8 @@
 
 Encapsulation of date/time values
 """
+from __future__ import division # We do lots of math, make sure it's consistent
+
 import math
 import re
 # there is a method definition that makes just "time"

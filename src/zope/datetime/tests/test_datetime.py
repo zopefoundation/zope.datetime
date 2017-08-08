@@ -28,7 +28,6 @@ class TestCache(unittest.TestCase):
 class TestFuncs(unittest.TestCase):
 
     def test_correctYear(self):
-
         self.assertEqual(2069, datetime._correctYear(69))
         self.assertEqual(1998, datetime._correctYear(98))
 
@@ -69,10 +68,9 @@ class TestFuncs(unittest.TestCase):
         self.assertEqual(datetime._julianday(0, 1, 1), 1721057)
 
     def test_calendarday(self):
-        # XXX: Why do we get different things on Py2 vs Py3?
-        # Are the calculations wrapping around somewhere? Is it the integer
-        # division?
-        answer = (-4712, 1, 3) if str is bytes else (-4711, 2, 0)
+        # If we don't have the future import of division, we get
+        # different results on Py2/Py3 when we pass an integer.
+        answer = (-4711, 2, 0)
         self.assertEqual(datetime._calendarday(1), answer)
 
     def test_findLocalTimeZoneName(self):

@@ -5,6 +5,11 @@
 4.2.0 (unreleased)
 ==================
 
+- Use true division on Python 2 to match Python 3, in case certain
+  parameters turn out to be integers instead of floating point values.
+  This is not expected to be user-visible, but it can arise in
+  artificial tests of internal functions.
+
 - Add support for Python 3.5 and 3.6.
 
 - Drop support for Python 2.6, 3.2 and 3.3.
