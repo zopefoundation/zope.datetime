@@ -198,6 +198,11 @@ class TestDateTimeParser(unittest.TestCase):
         finally:
             datetime.safelocaltime = orig_safelocaltime
 
+    def test_calcTimezoneName_multiple_non_fail(self):
+        dtp = self._makeOne()
+        dtp._multipleZones = True
+        self.assertIsNotNone(dtp._calcTimezoneName(100, 1))
+
     def test_parse_noniso_bad_month(self):
         with self.assertRaises(datetime.SyntaxError):
             self._callParse("2000--31 +1")
@@ -279,3 +284,8 @@ class TestDateTimeParser(unittest.TestCase):
 
     def test_valid_date(self):
         self.assertFalse(self._makeOne()._validDate(2000, 0, 12))
+
+    def test_localZone_multiple(self):
+        p = self._makeOne()
+        p._multipleZones = True
+        self.assertIsNotNone(p.localZone())
