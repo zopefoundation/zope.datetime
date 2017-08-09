@@ -49,15 +49,27 @@ monthname = [
 
 
 def iso8601_date(ts=None):
-    # Return an ISO 8601 formatted date string, required
-    # for certain DAV properties.
-    # '2000-11-10T16:21:09-08:00
+    """
+    Return an ISO 8601 formatted date string, required
+    for certain DAV properties.
+
+    For example: '2000-11-10T16:21:09-08:00'
+
+    :param float ts: A timestamp as returned by :func:`time.time`.
+        If not given, the current time will be used.
+    """
     ts = _time.time() if ts is None else ts
     return _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime(ts))
 
 def rfc850_date(ts=None):
-    # Return an HTTP-date formatted date string.
-    # 'Friday, 10-Nov-00 16:21:09 GMT'
+    """
+    Return an RFC 850 formatted date string.
+
+    For example, 'Friday, 10-Nov-00 16:21:09 GMT'.
+
+    :param float ts: A timestamp as returned by :func:`time.time`.
+        If not given, the current time will be used.
+    """
     ts = _time.time() if ts is None else ts
     year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
     return "%s, %02d-%3s-%2s %02d:%02d:%02d GMT" % (
@@ -68,9 +80,16 @@ def rfc850_date(ts=None):
     )
 
 def rfc1123_date(ts=None):
-    # Return an RFC 1123 format date string, required for
-    # use in HTTP Date headers per the HTTP 1.1 spec.
-    # 'Fri, 10 Nov 2000 16:21:09 GMT'
+    """
+    Return an RFC 1123 format date string, required for
+    use in HTTP Date headers per the HTTP 1.1 spec.
+
+    For example, 'Fri, 10 Nov 2000 16:21:09 GMT'.
+
+    :param float ts: A timestamp as returned by :func:`time.time`.
+        If not given, the current time will be used.
+    """
+
     ts = _time.time() if ts is None else ts
     year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
     return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
@@ -79,14 +98,30 @@ def rfc1123_date(ts=None):
         year,
         hh, mm, ss)
 
+
 class DateTimeError(Exception):
-    "Date-time error"
+    """
+    The root exception for errors raised by this module.
+    """
+
+
 class DateError(DateTimeError):
-    'Invalid Date Components'
+    """
+    Invalid Date Components
+    """
+
+
 class TimeError(DateTimeError):
-    'Invalid Time Components'
+    """
+    Invalid Time Components
+    """
+
+
 class SyntaxError(DateTimeError):
-    'Invalid Date-Time String'
+    """
+    Invalid Date-Time String
+    """
+
 
 # Determine machine epoch
 def _calc_epoch():
@@ -475,10 +510,8 @@ def safelocaltime(t):
 class DateTimeParser(object):
 
     def parse(self, arg, local=True):
-        """Parse a string containing some sort of date-time data.
-
-        This function returns a tuple (year, month, day, hour, minute,
-        second, timezone_string).
+        """
+        Parse a string containing some sort of date-time data into a tuple.
 
         As a general rule, any date-time representation that is
         recognized and unambigous to a resident of North America is
@@ -495,17 +528,17 @@ class DateTimeParser(object):
         with the string 'Mar 9, 1997 1:45pm US/Pacific', the
         value will essentially be the same as if you had captured
         time.time() at the specified date and time on a machine in
-        that timezone)
+        that timezone)::
 
-        x=parse('1997/3/9 1:45pm')
-        # returns specified time, represented in local machine zone.
+            x = parse('1997/3/9 1:45pm')
+            # returns specified time, represented in local machine zone.
 
-        y=parse('Mar 9, 1997 13:45:00')
-        # y is equal to x
+            y = parse('Mar 9, 1997 13:45:00')
+            # y is equal to x
 
-        The function automatically detects and handles
-        ISO8601 compliant dates (YYYY-MM-DDThh:ss:mmTZD).
-        See http://www.w3.org/TR/NOTE-datetime for full specs.
+        The function automatically detects and handles `ISO8601
+        compliant dates <http://www.w3.org/TR/NOTE-datetime>`_
+        (YYYY-MM-DDThh:ss:mmTZD).
 
         The date component consists of year, month, and day
         values. The year value must be a one-, two-, or
@@ -533,10 +566,22 @@ class DateTimeParser(object):
         followed by am or pm in upper or lower case, in which
         case a 12-hour clock is assumed.
 
-        If a string argument passed to the DateTime constructor cannot be
-        parsed, it will raise SyntaxError. Invalid date components
-        will raise a DateError, while invalid time or timezone components
-        will raise a DateTimeError.
+        :keyword bool local: If no timezone can be parsed from the string,
+            figure out what timezone it is in the local area
+            on the given date and return that.
+
+        :return: This function returns a tuple (year, month, day, hour, minute,
+            second, timezone_string).
+
+        :raises SyntaxError:
+            If a string argument passed to the DateTime constructor cannot be
+            parsed (for example, it is empty).
+        :raises DateError:
+            If the date components are invalid.
+        :raises DateTimeError:
+           If the time or timezone components are invalid.
+        :raises TypeError:
+           If the argument is not a string.
         """
         if not isinstance(arg, StringTypes):
             raise TypeError('Expected a string argument')
@@ -558,11 +603,17 @@ class DateTimeParser(object):
         return yr, mo, dy, hr, mn, sc, tz
 
     def time(self, arg):
-        """Parse a string containing some sort of date-time data.
+        """
+        Parse a string containing some sort of date-time data and return
+        the value in seconds since the Epoch.
 
-        This function returns the time in seconds since the Epoch (in UTC).
+        :return: A floating point number representing the time in
+            seconds since the Epoch (in UTC).
 
-        See date() for the description of allowed input values.
+        :raises DateTimeError: If a timezone was parsed from the argument,
+           but it wasn't a known named or numeric timezone.
+
+        .. seealso:: :meth:`parse` for the description of allowed input values.
         """
 
         yr, mo, dy, hr, mn, sc, tz = self.parse(arg)
@@ -994,6 +1045,9 @@ tzinfo.__safe_for_unpickling__ = True
 
 
 def parseDatetimetz(string, local=True):
+    """
+    Parse the given string using :func:`parse` and return a :class:`datetime.datetime` instance.
+    """
     y, mo, d, h, m, s, tz = parse(string, local)
     s, micro = divmod(s, 1.0)
     micro = round(micro * 1000000)
