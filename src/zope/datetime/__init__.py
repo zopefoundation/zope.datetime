@@ -470,20 +470,20 @@ def _correctYear(year):
 def safegmtime(t):
     '''gmtime with a safety zone.'''
     try:
-        t_int = int(t)
-    except OverflowError:
-        raise TimeError('The time %f is beyond the range '
-                        'of this Python implementation.' % float(t))
-    return _time.gmtime(t_int)
+        return _time.gmtime(t)
+    except (ValueError, OverflowError): # Py2/Py3 respectively
+        raise TimeError('The time %r is beyond the range '
+                        'of this Python implementation.' % t)
+
 
 def safelocaltime(t):
     '''localtime with a safety zone.'''
     try:
-        t_int = int(t)
-    except OverflowError:
-        raise TimeError('The time %f is beyond the range '
-                        'of this Python implementation.' % float(t))
-    return _time.localtime(t_int)
+        return _time.localtime(t)
+    except (ValueError, OverflowError): # Py2/Py3 respectively
+        raise TimeError('The time %r is beyond the range '
+                        'of this Python implementation.' % t)
+
 
 class DateTimeParser(object):
 

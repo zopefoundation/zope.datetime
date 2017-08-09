@@ -33,18 +33,14 @@ class TestFuncs(unittest.TestCase):
 
 
     def test_safegmtime_safelocaltime_overflow(self):
-        def i(*args):
-            raise OverflowError()
-        try:
-            datetime.int = i
-            with self.assertRaises(datetime.TimeError):
-                datetime.safegmtime(1)
-
-            with self.assertRaises(datetime.TimeError):
-                datetime.safelocaltime(1)
-
-        finally:
-            del datetime.int
+        # Use values that are practically guaranteed to overflow on all
+        # platforms
+        v = 2**64 + 1
+        fv = float(v)
+        for func in (datetime.safegmtime, datetime.safelocaltime):
+            for x in (v, fv):
+                with self.assertRaises(datetime.TimeError):
+                    func(x)
 
     def test_safegmtime(self):
         self.assertIsNotNone(datetime.safegmtime(6000))
