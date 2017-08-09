@@ -67,12 +67,6 @@ class TestFuncs(unittest.TestCase):
         self.assertEqual(datetime._julianday(2000, -1, 1), 2451483)
         self.assertEqual(datetime._julianday(0, 1, 1), 1721057)
 
-    def test_calendarday(self):
-        # If we don't have the future import of division, we get
-        # different results on Py2/Py3 when we pass an integer.
-        answer = (-4711, 2, 0)
-        self.assertEqual(datetime._calendarday(1), answer)
-
     def test_findLocalTimeZoneName(self):
         zmap = datetime._cache._zmap
         try:
@@ -194,16 +188,17 @@ class TestDateTimeParser(unittest.TestCase):
         dtp._localzone0 = '0'
         dtp._localzone1 = '1'
 
-        called = []
+        class MyException(Exception):
+            pass
+
         def i(_):
-            if not called:
-                called.append(1)
-                raise OverflowError()
-            return (0, 0, 0, 0, 0, 0, 0, 0, 1)
+            raise MyException()
+
         orig_safelocaltime = datetime.safelocaltime
         try:
             datetime.safelocaltime = i
-            self.assertEqual('1', dtp._calcTimezoneName(9467061400, 0))
+            self.assertRaises(MyException,
+                              dtp._calcTimezoneName, 9467061400, 0)
         finally:
             datetime.safelocaltime = orig_safelocaltime
 

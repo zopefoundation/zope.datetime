@@ -5,6 +5,16 @@
 4.2.0 (unreleased)
 ==================
 
+- Remove support for guessing the timezone name when a timestamp
+  exceeds the value supported by Python's ``localtime`` function. On
+  platforms with a 32-bit ``time_t``, this would involve parsed values
+  that do not specify a timezone and are past the year 2038. Now the
+  underlying exception will be propagated. Previously an undocumented
+  heuristic was used. This is not expected to be a common issue;
+  Windows, as one example, always uses a 64-bit ``time_t``, even on
+  32-bit platforms. See
+  https://github.com/zopefoundation/zope.datetime/issues/4
+
 - Use true division on Python 2 to match Python 3, in case certain
   parameters turn out to be integers instead of floating point values.
   This is not expected to be user-visible, but it can arise in
