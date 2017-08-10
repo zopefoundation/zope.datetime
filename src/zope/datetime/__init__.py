@@ -15,6 +15,8 @@
 
 Encapsulation of date/time values
 """
+from __future__ import division # We do lots of math, make sure it's consistent
+
 import math
 import re
 # there is a method definition that makes just "time"
@@ -422,17 +424,6 @@ def _calcHMS(x, ms):
     sc = x - mn * 60 + ms
     return hr, mn, sc
 
-def _calcYMDHMS(x, ms):
-    # x is a timezone-dependent integer of seconds.
-    # Produces yr,mo,dy,hr,mn,sc.
-    yr, mo, dy = _calendarday(x / 86400 + jd1901)
-    x = int(x - (x / 86400) * 86400)
-    hr = x / 3600
-    x = x - hr * 3600
-    mn = x / 60
-    sc = x - mn * 60 + ms
-    return yr, mo, dy, hr, mn, sc
-
 def _julianday(y, m, d):
     if m > 12:
         y = y + m // 12
@@ -453,19 +444,6 @@ def _julianday(y, m, d):
         b = 0
     return (1461 * y - yr_correct) // 4 + 306001 * (m + 1) // 10000 + d + 1720994 + b
 
-def _calendarday(j):
-    if j < 2299160:
-        b = j + 1525
-    else:
-        a = (4 * j - 7468861) / 146097
-        b = j + 1526 + a - a / 4
-    c = (20 * b - 2442) / 7305
-    d = 1461 * c / 4
-    e = 10000 * (b - d) / 306001
-    dy = int(b - d - 306001 * e / 10000)
-    mo = int(e - 1) if e < 14 else int(e - 13)
-    yr = (c - 4716) if mo > 2 else (c - 4715)
-    return int(yr), int(mo), int(dy)
 
 def _tzoffset(tz, t):
     try:
@@ -492,20 +470,20 @@ def _correctYear(year):
 def safegmtime(t):
     '''gmtime with a safety zone.'''
     try:
-        t_int = int(t)
-    except OverflowError:
-        raise TimeError('The time %f is beyond the range '
-                        'of this Python implementation.' % float(t))
-    return _time.gmtime(t_int)
+        return _time.gmtime(t)
+    except (ValueError, OverflowError): # Py2/Py3 respectively
+        raise TimeError('The time %r is beyond the range '
+                        'of this Python implementation.' % t)
+
 
 def safelocaltime(t):
     '''localtime with a safety zone.'''
     try:
-        t_int = int(t)
-    except OverflowError:
-        raise TimeError('The time %f is beyond the range '
-                        'of this Python implementation.' % float(t))
-    return _time.localtime(t_int)
+        return _time.localtime(t)
+    except (ValueError, OverflowError): # Py2/Py3 respectively
+        raise TimeError('The time %r is beyond the range '
+                        'of this Python implementation.' % t)
+
 
 class DateTimeParser(object):
 
@@ -699,18 +677,7 @@ class DateTimeParser(object):
         fsetAtEpoch = _tzoffset(self._localzone0, 0.0)
         nearTime = x - fsetAtEpoch - EPOCH + 86400 + ms
         # nearTime is within an hour of being correct.
-        try:
-            ltm = safelocaltime(nearTime)
-        except Exception:
-            # We are beyond the range of Python's date support.
-            # Hopefully we can assume that daylight savings schedules
-            # repeat every 28 years.  Calculate the name of the
-            # time zone using a supported range of years.
-            yr, mo, dy, hr, mn, sc = _calcYMDHMS(x, 0)
-            yr = ((yr - 1970) % 28) + 1970
-            x = _calcDependentSecond2(yr, mo, dy, hr, mn, sc)
-            nearTime = x - fsetAtEpoch - EPOCH + 86400 + ms
-            ltm = safelocaltime(nearTime)
+        ltm = safelocaltime(nearTime)
         tz = self.localZone(ltm)
         return tz
 

@@ -28,24 +28,19 @@ class TestCache(unittest.TestCase):
 class TestFuncs(unittest.TestCase):
 
     def test_correctYear(self):
-
         self.assertEqual(2069, datetime._correctYear(69))
         self.assertEqual(1998, datetime._correctYear(98))
 
 
     def test_safegmtime_safelocaltime_overflow(self):
-        def i(*args):
-            raise OverflowError()
-        try:
-            datetime.int = i
-            with self.assertRaises(datetime.TimeError):
-                datetime.safegmtime(1)
-
-            with self.assertRaises(datetime.TimeError):
-                datetime.safelocaltime(1)
-
-        finally:
-            del datetime.int
+        # Use values that are practically guaranteed to overflow on all
+        # platforms
+        v = 2**64 + 1
+        fv = float(v)
+        for func in (datetime.safegmtime, datetime.safelocaltime):
+            for x in (v, fv):
+                with self.assertRaises(datetime.TimeError):
+                    func(x)
 
     def test_safegmtime(self):
         self.assertIsNotNone(datetime.safegmtime(6000))
@@ -67,13 +62,6 @@ class TestFuncs(unittest.TestCase):
         self.assertEqual(datetime._julianday(2000, 13, 1), 2451910)
         self.assertEqual(datetime._julianday(2000, -1, 1), 2451483)
         self.assertEqual(datetime._julianday(0, 1, 1), 1721057)
-
-    def test_calendarday(self):
-        # XXX: Why do we get different things on Py2 vs Py3?
-        # Are the calculations wrapping around somewhere? Is it the integer
-        # division?
-        answer = (-4712, 1, 3) if str is bytes else (-4711, 2, 0)
-        self.assertEqual(datetime._calendarday(1), answer)
 
     def test_findLocalTimeZoneName(self):
         zmap = datetime._cache._zmap
@@ -196,18 +184,24 @@ class TestDateTimeParser(unittest.TestCase):
         dtp._localzone0 = '0'
         dtp._localzone1 = '1'
 
-        called = []
+        class MyException(Exception):
+            pass
+
         def i(_):
-            if not called:
-                called.append(1)
-                raise OverflowError()
-            return (0, 0, 0, 0, 0, 0, 0, 0, 1)
+            raise MyException()
+
         orig_safelocaltime = datetime.safelocaltime
         try:
             datetime.safelocaltime = i
-            self.assertEqual('1', dtp._calcTimezoneName(9467061400, 0))
+            self.assertRaises(MyException,
+                              dtp._calcTimezoneName, 9467061400, 0)
         finally:
             datetime.safelocaltime = orig_safelocaltime
+
+    def test_calcTimezoneName_multiple_non_fail(self):
+        dtp = self._makeOne()
+        dtp._multipleZones = True
+        self.assertIsNotNone(dtp._calcTimezoneName(100, 1))
 
     def test_parse_noniso_bad_month(self):
         with self.assertRaises(datetime.SyntaxError):
@@ -290,3 +284,8 @@ class TestDateTimeParser(unittest.TestCase):
 
     def test_valid_date(self):
         self.assertFalse(self._makeOne()._validDate(2000, 0, 12))
+
+    def test_localZone_multiple(self):
+        p = self._makeOne()
+        p._multipleZones = True
+        self.assertIsNotNone(p.localZone())
