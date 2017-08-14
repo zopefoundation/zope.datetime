@@ -2,7 +2,7 @@
  CHANGES
 =========
 
-4.2.0 (unreleased)
+4.2.0 (2017-08-14)
 ==================
 
 - Remove support for guessing the timezone name when a timestamp
