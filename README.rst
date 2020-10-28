@@ -10,8 +10,8 @@
         :target: https://pypi.org/project/zope.datetime/
         :alt: Supported Python versions
 
-.. image:: https://travis-ci.org/zopefoundation/zope.datetime.svg?branch=master
-        :target: https://travis-ci.org/zopefoundation/zope.datetime
+.. image:: https://travis-ci.com/zopefoundation/zope.datetime.svg?branch=master
+        :target: https://travis-ci.com/zopefoundation/zope.datetime
 
 .. image:: https://coveralls.io/repos/github/zopefoundation/zope.datetime/badge.svg?branch=master
         :target: https://coveralls.io/github/zopefoundation/zope.datetime?branch=master
