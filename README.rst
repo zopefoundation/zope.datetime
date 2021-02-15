@@ -10,11 +10,13 @@
         :target: https://pypi.org/project/zope.datetime/
         :alt: Supported Python versions
 
-.. image:: https://travis-ci.com/zopefoundation/zope.datetime.svg?branch=master
-        :target: https://travis-ci.com/zopefoundation/zope.datetime
+.. image:: https://github.com/zopefoundation/zope.datetime/workflows/tests/badge.svg
+        :target: https://github.com/zopefoundation/zope.datetime/actions?query=workflow%3Atests
+        :alt: CI status
 
 .. image:: https://coveralls.io/repos/github/zopefoundation/zope.datetime/badge.svg?branch=master
         :target: https://coveralls.io/github/zopefoundation/zope.datetime?branch=master
+        :alt: Coverage
 
 .. image:: https://readthedocs.org/projects/zopedatetime/badge/?version=latest
         :target: https://zopedatetime.readthedocs.io/en/latest/
