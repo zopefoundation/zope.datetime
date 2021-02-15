@@ -1,0 +1,22 @@
+# Generated from:
+# https://github.com/zopefoundation/meta/tree/master/config/pure-python
+[meta]
+template = "pure-python"
+commit-id = "8da7f1dd846036183b551ce1a617931151e44a33"
+
+[python]
+with-appveyor = false
+with-pypy = true
+with-legacy-python = true
+with-docs = true
+with-sphinx-doctests = false
+
+[coverage]
+fail-under = 99
+
+[flake8]
+additional-config = [
+    "# E501 line too long",
+    "per-file-ignores =",
+    "    src/zope/datetime/timezones.py: E501",
+    ]
