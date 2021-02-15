@@ -45,12 +45,12 @@ class Test(unittest.TestCase):
                          (1999, 12, 31, 1, 2, 3))
         self.assertEqual(parse('1999-31-12 1:2:3.456')[:5],
                          (1999, 12, 31, 1, 2))
-        self.assertEqual(int(parse('1999-31-12 1:2:3.456')[5]*1000+.000001),
-                         3456)
+        self.assertEqual(int(parse('1999-31-12 1:2:3.456')
+                             [5] * 1000 + .000001), 3456)
         self.assertEqual(parse('1999-12-31T01:02:03.456')[:5],
                          (1999, 12, 31, 1, 2))
-        self.assertEqual(int(parse('1999-12-31T01:02:03.456')[5]*1000+.000001),
-                         3456)
+        self.assertEqual(int(parse('1999-12-31T01:02:03.456')
+                             [5] * 1000 + .000001), 3456)
         self.assertEqual(parse('Tue, 24 Jul 2001 09:41:03 -0400'),
                          (2001, 7, 24, 9, 41, 3, '-0400'))
         self.assertEqual(parse('1999-12-31T01:02:03.456-12')[6], '-1200')
@@ -85,16 +85,17 @@ class Test(unittest.TestCase):
                          (2004, 2, 29, 1, 2, 3))
 
     def test_tzoffset(self):
-        self.assertEqual(_tzoffset('-0400', None), -4*60*60)
-        self.assertEqual(_tzoffset('-0030', None), -30*60)
-        self.assertEqual(_tzoffset('+0200', None), 2*60*60)
-        self.assertEqual(_tzoffset('EET', None), 2*60*60)
+        self.assertEqual(_tzoffset('-0400', None), -4 * 60 * 60)
+        self.assertEqual(_tzoffset('-0030', None), -30 * 60)
+        self.assertEqual(_tzoffset('+0200', None), 2 * 60 * 60)
+        self.assertEqual(_tzoffset('EET', None), 2 * 60 * 60)
 
     def testParseDatetimetz(self):
         self.assertEqual(parseDatetimetz('1999-12-31T01:02:03.037-00:30'),
                          datetime(1999, 12, 31, 1, 2, 3, 37000, tzinfo(-30)))
         self.assertEqual(parseDatetimetz('2003 6 4 00:00:00 ', local=False),
                          datetime(2003, 6, 4))
+
 
 def test_suite():
     return unittest.defaultTestLoader.loadTestsFromName(__name__)

@@ -17,6 +17,7 @@ import unittest
 
 from zope.datetime import time
 
+
 class Test(unittest.TestCase):
 
     def testiso8601_date(self):
@@ -34,8 +35,10 @@ class Test(unittest.TestCase):
         self.assertEqual(rfc1123_date(time("2002-01-12T01:01:01.234Z")),
                          "Sat, 12 Jan 2002 01:01:01 GMT")
 
+
 def test_suite():
     return unittest.defaultTestLoader.loadTestsFromName(__name__)
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

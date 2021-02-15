@@ -15,13 +15,15 @@
 import unittest
 
 import time
+import six
 from zope import datetime
+
 
 class TestCache(unittest.TestCase):
 
     def test_error(self):
-        with self.assertRaisesRegexp(datetime.DateTimeError,
-                                     "Unrecognized timezone"):
+        with six.assertRaisesRegex(
+                self, datetime.DateTimeError, "Unrecognized timezone"):
             datetime._cache().__getitem__('foo')
 
 
@@ -30,7 +32,6 @@ class TestFuncs(unittest.TestCase):
     def test_correctYear(self):
         self.assertEqual(2069, datetime._correctYear(69))
         self.assertEqual(1998, datetime._correctYear(98))
-
 
     def test_safegmtime_safelocaltime_overflow(self):
         # Use values that are practically guaranteed to overflow on all
@@ -44,7 +45,6 @@ class TestFuncs(unittest.TestCase):
 
     def test_safegmtime(self):
         self.assertIsNotNone(datetime.safegmtime(6000))
-
 
     def test_safelocaltime(self):
         self.assertIsNotNone(datetime.safelocaltime(6000))
@@ -77,7 +77,8 @@ class TestTimezone(unittest.TestCase):
 
     def _makeOne(self, name='name', timect=1, typect=0,
                  ttrans=(), tindex=1, tinfo=(), az=0):
-        return datetime._timezone((name, timect, typect, ttrans, tindex, tinfo, az))
+        return datetime._timezone(
+            (name, timect, typect, ttrans, tindex, tinfo, az))
 
     def test_default_index(self):
         tz = self._makeOne(timect=0)
@@ -101,7 +102,6 @@ class TestTimezone(unittest.TestCase):
         tz.tindex = 'ab'
         self.assertEqual((98, 98, 97),
                          tz.index(1))
-
 
 
 class TestDateTimeParser(unittest.TestCase):
@@ -148,8 +148,8 @@ class TestDateTimeParser(unittest.TestCase):
             return (2000, 1, 1, 0, 0, 0, '+FOO')
         dtp = self._makeOne()
         dtp.parse = t
-        with self.assertRaisesRegexp(datetime.DateTimeError,
-                                     "Unknown time zone"):
+        with six.assertRaisesRegex(
+                self, datetime.DateTimeError, "Unknown time zone"):
             dtp.time("foo")
 
     def test_time_no_tz(self):
@@ -264,8 +264,8 @@ class TestDateTimeParser(unittest.TestCase):
 
     def test_parse_iso_index_error(self):
         dtp = self._makeOne()
-        with self.assertRaisesRegexp(datetime.DateError,
-                                     "Not an ISO 8601 compliant"):
+        with six.assertRaisesRegex(
+                self, datetime.DateError, "Not an ISO 8601 compliant"):
             dtp._parse_iso8601('')
 
     def test_parse_with_dot(self):
