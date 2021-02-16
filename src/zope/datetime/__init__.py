@@ -907,10 +907,8 @@ class DateTimeParser(object):
     def _validDate(self, y, m, d):
         if m < 1 or m > 12 or y < 0 or d < 1 or d > 31:
             return 0
-        return d <= self._month_len[(y %
-                                     4 == 0 and (y %
-                                                 100 != 0 or y %
-                                                 400 == 0))][m]
+        is_leap_year = y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
+        return d <= self._month_len[is_leap_year][m]
 
     def _validTime(self, h, m, s):
         return h >= 0 and h <= 23 and m >= 0 and m <= 59 and s >= 0 and s < 60
