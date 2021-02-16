@@ -15,7 +15,7 @@
 
 Encapsulation of date/time values
 """
-from __future__ import division # We do lots of math, make sure it's consistent
+from __future__ import division
 
 import math
 import re
@@ -31,7 +31,10 @@ from datetime import tzinfo as _std_tzinfo, timedelta as _timedelta
 from zope.datetime.timezones import historical_zone_info as _data
 
 
-StringTypes = (str,) if str is not bytes else (basestring,)
+if str is bytes:  # PY2
+    StringTypes = (basestring,)  # noqa: F821 undefined name pragma: PY2
+else:
+    StringTypes = (str,)  # pragma: PY3
 
 
 # These are needed because the various date formats below must
@@ -63,6 +66,7 @@ def iso8601_date(ts=None):
     ts = _time.time() if ts is None else ts
     return _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime(ts))
 
+
 def rfc850_date(ts=None):
     """
     Return an RFC 850 formatted date string.
@@ -80,6 +84,7 @@ def rfc850_date(ts=None):
         str(year)[2:],
         hh, mm, ss
     )
+
 
 def rfc1123_date(ts=None):
     """
@@ -133,14 +138,16 @@ def _calc_epoch():
     i = int(yr - 1)
     to_year = int(i * 365 + i / 4 - i / 100 + i / 400 - 693960.0)
     to_month = tm[yr % 4 == 0 and (yr % 100 != 0 or yr % 400 == 0)][mo]
-    epoch = (to_year + to_month + dy + (hr / 24.0 + mn / 1440.0 + sc / 86400.0)) * 86400
+    epoch = (to_year + to_month + dy +
+             (hr / 24.0 + mn / 1440.0 + sc / 86400.0)) * 86400
     return epoch
 
 
 EPOCH = _calc_epoch()
 jd1901 = 2415385
 
-numericTimeZoneMatch = re.compile(r'[+-][0-9][0-9][0-9][0-9]').match #TS
+numericTimeZoneMatch = re.compile(r'[+-][0-9][0-9][0-9][0-9]').match  # TS
+
 
 class _timezone(object):
 
@@ -172,11 +179,12 @@ class _timezone(object):
                 idx = (ord(self.tindex[-1]), ord(self.tindex[-1]),
                        self.default_index())
         else:
-            for i in range(self.timect-1):
-                if t < self.ttrans[i+1]:
+            for i in range(self.timect - 1):
+                if t < self.ttrans[i + 1]:
                     idx = (ord(self.tindex[i]),
-                           ord(self.tindex[i+1]),
-                           self.default_index() if i == 0 else ord(self.tindex[i-1]))
+                           ord(self.tindex[i + 1]),
+                           self.default_index() if i == 0
+                           else ord(self.tindex[i - 1]))
                     break
         return idx
 
@@ -184,8 +192,6 @@ class _timezone(object):
         idx = self.index(t)[0]
         zs = self.az[self.tinfo[idx][2]:]
         return self.tinfo[idx][0], self.tinfo[idx][1], zs[: zs.find('\000')]
-
-
 
 
 class _cache(object):
@@ -226,114 +232,114 @@ class _cache(object):
         'WAST', 'CCT', 'JST', 'EAST', 'GST', 'NZT', 'NZST', 'IDLE'
     ]
 
-
     _zmap = {
-        'aest':'GMT+1000', 'aedt':'GMT+1100',
-        'aus eastern standard time':'GMT+1000',
-        'sydney standard time':'GMT+1000',
-        'tasmania standard time':'GMT+1000',
-        'e. australia standard time':'GMT+1000',
-        'aus central standard time':'GMT+0930',
-        'cen. australia standard time':'GMT+0930',
-        'w. australia standard time':'GMT+0800',
+        'aest': 'GMT+1000', 'aedt': 'GMT+1100',
+        'aus eastern standard time': 'GMT+1000',
+        'sydney standard time': 'GMT+1000',
+        'tasmania standard time': 'GMT+1000',
+        'e. australia standard time': 'GMT+1000',
+        'aus central standard time': 'GMT+0930',
+        'cen. australia standard time': 'GMT+0930',
+        'w. australia standard time': 'GMT+0800',
 
-        'brazil/acre':'Brazil/Acre',
-        'brazil/denoronha':'Brazil/Denoronha',
-        'brazil/east':'Brazil/East', 'brazil/west':'Brazil/West',
-        'canada/atlantic':'Canada/Atlantic',
-        'canada/central':'Canada/Central',
-        'canada/eastern':'Canada/Eastern',
-        'canada/east-saskatchewan':'Canada/East-Saskatchewan',
-        'canada/mountain':'Canada/Mountain',
-        'canada/newfoundland':'Canada/Newfoundland',
-        'canada/pacific':'Canada/Pacific', 'canada/yukon':'Canada/Yukon',
-        'central europe standard time':'GMT+0100',
-        'chile/continental':'Chile/Continental',
-        'chile/easterisland':'Chile/EasterIsland',
-        'cst':'US/Central', 'cuba':'Cuba', 'est':'US/Eastern', 'egypt':'Egypt',
-        'eastern standard time':'US/Eastern',
-        'us eastern standard time':'US/Eastern',
-        'central standard time':'US/Central',
-        'mountain standard time':'US/Mountain',
-        'pacific standard time':'US/Pacific',
-        'gb-eire':'GB-Eire', 'gmt':'GMT',
+        'brazil/acre': 'Brazil/Acre',
+        'brazil/denoronha': 'Brazil/Denoronha',
+        'brazil/east': 'Brazil/East', 'brazil/west': 'Brazil/West',
+        'canada/atlantic': 'Canada/Atlantic',
+        'canada/central': 'Canada/Central',
+        'canada/eastern': 'Canada/Eastern',
+        'canada/east-saskatchewan': 'Canada/East-Saskatchewan',
+        'canada/mountain': 'Canada/Mountain',
+        'canada/newfoundland': 'Canada/Newfoundland',
+        'canada/pacific': 'Canada/Pacific', 'canada/yukon': 'Canada/Yukon',
+        'central europe standard time': 'GMT+0100',
+        'chile/continental': 'Chile/Continental',
+        'chile/easterisland': 'Chile/EasterIsland',
+        'cst': 'US/Central', 'cuba': 'Cuba', 'est': 'US/Eastern',
+        'egypt': 'Egypt',
+        'eastern standard time': 'US/Eastern',
+        'us eastern standard time': 'US/Eastern',
+        'central standard time': 'US/Central',
+        'mountain standard time': 'US/Mountain',
+        'pacific standard time': 'US/Pacific',
+        'gb-eire': 'GB-Eire', 'gmt': 'GMT',
 
-        'gmt+0000':'GMT+0', 'gmt+0':'GMT+0',
+        'gmt+0000': 'GMT+0', 'gmt+0': 'GMT+0',
 
 
-        'gmt+0100':'GMT+1', 'gmt+0200':'GMT+2', 'gmt+0300':'GMT+3',
-        'gmt+0400':'GMT+4', 'gmt+0500':'GMT+5', 'gmt+0600':'GMT+6',
-        'gmt+0700':'GMT+7', 'gmt+0800':'GMT+8', 'gmt+0900':'GMT+9',
-        'gmt+1000':'GMT+10', 'gmt+1100':'GMT+11', 'gmt+1200':'GMT+12',
-        'gmt+1300':'GMT+13',
-        'gmt-0100':'GMT-1', 'gmt-0200':'GMT-2', 'gmt-0300':'GMT-3',
-        'gmt-0400':'GMT-4', 'gmt-0500':'GMT-5', 'gmt-0600':'GMT-6',
-        'gmt-0700':'GMT-7', 'gmt-0800':'GMT-8', 'gmt-0900':'GMT-9',
-        'gmt-1000':'GMT-10', 'gmt-1100':'GMT-11', 'gmt-1200':'GMT-12',
+        'gmt+0100': 'GMT+1', 'gmt+0200': 'GMT+2', 'gmt+0300': 'GMT+3',
+        'gmt+0400': 'GMT+4', 'gmt+0500': 'GMT+5', 'gmt+0600': 'GMT+6',
+        'gmt+0700': 'GMT+7', 'gmt+0800': 'GMT+8', 'gmt+0900': 'GMT+9',
+        'gmt+1000': 'GMT+10', 'gmt+1100': 'GMT+11', 'gmt+1200': 'GMT+12',
+        'gmt+1300': 'GMT+13',
+        'gmt-0100': 'GMT-1', 'gmt-0200': 'GMT-2', 'gmt-0300': 'GMT-3',
+        'gmt-0400': 'GMT-4', 'gmt-0500': 'GMT-5', 'gmt-0600': 'GMT-6',
+        'gmt-0700': 'GMT-7', 'gmt-0800': 'GMT-8', 'gmt-0900': 'GMT-9',
+        'gmt-1000': 'GMT-10', 'gmt-1100': 'GMT-11', 'gmt-1200': 'GMT-12',
 
         'gmt+1': 'GMT+1', 'gmt+2': 'GMT+2', 'gmt+3': 'GMT+3',
         'gmt+4': 'GMT+4', 'gmt+5': 'GMT+5', 'gmt+6': 'GMT+6',
         'gmt+7': 'GMT+7', 'gmt+8': 'GMT+8', 'gmt+9': 'GMT+9',
-        'gmt+10':'GMT+10', 'gmt+11':'GMT+11', 'gmt+12':'GMT+12',
-        'gmt+13':'GMT+13',
+        'gmt+10': 'GMT+10', 'gmt+11': 'GMT+11', 'gmt+12': 'GMT+12',
+        'gmt+13': 'GMT+13',
         'gmt-1': 'GMT-1', 'gmt-2': 'GMT-2', 'gmt-3': 'GMT-3',
         'gmt-4': 'GMT-4', 'gmt-5': 'GMT-5', 'gmt-6': 'GMT-6',
         'gmt-7': 'GMT-7', 'gmt-8': 'GMT-8', 'gmt-9': 'GMT-9',
-        'gmt-10':'GMT-10', 'gmt-11':'GMT-11', 'gmt-12':'GMT-12',
+        'gmt-10': 'GMT-10', 'gmt-11': 'GMT-11', 'gmt-12': 'GMT-12',
 
-        'gmt+130':'GMT+0130', 'gmt+0130':'GMT+0130',
-        'gmt+230':'GMT+0230', 'gmt+0230':'GMT+0230',
-        'gmt+330':'GMT+0330', 'gmt+0330':'GMT+0330',
-        'gmt+430':'GMT+0430', 'gmt+0430':'GMT+0430',
-        'gmt+530':'GMT+0530', 'gmt+0530':'GMT+0530',
-        'gmt+630':'GMT+0630', 'gmt+0630':'GMT+0630',
-        'gmt+730':'GMT+0730', 'gmt+0730':'GMT+0730',
-        'gmt+830':'GMT+0830', 'gmt+0830':'GMT+0830',
-        'gmt+930':'GMT+0930', 'gmt+0930':'GMT+0930',
-        'gmt+1030':'GMT+1030',
-        'gmt+1130':'GMT+1130',
-        'gmt+1230':'GMT+1230',
+        'gmt+130': 'GMT+0130', 'gmt+0130': 'GMT+0130',
+        'gmt+230': 'GMT+0230', 'gmt+0230': 'GMT+0230',
+        'gmt+330': 'GMT+0330', 'gmt+0330': 'GMT+0330',
+        'gmt+430': 'GMT+0430', 'gmt+0430': 'GMT+0430',
+        'gmt+530': 'GMT+0530', 'gmt+0530': 'GMT+0530',
+        'gmt+630': 'GMT+0630', 'gmt+0630': 'GMT+0630',
+        'gmt+730': 'GMT+0730', 'gmt+0730': 'GMT+0730',
+        'gmt+830': 'GMT+0830', 'gmt+0830': 'GMT+0830',
+        'gmt+930': 'GMT+0930', 'gmt+0930': 'GMT+0930',
+        'gmt+1030': 'GMT+1030',
+        'gmt+1130': 'GMT+1130',
+        'gmt+1230': 'GMT+1230',
 
-        'gmt-130':'GMT-0130', 'gmt-0130':'GMT-0130',
-        'gmt-230':'GMT-0230', 'gmt-0230':'GMT-0230',
-        'gmt-330':'GMT-0330', 'gmt-0330':'GMT-0330',
-        'gmt-430':'GMT-0430', 'gmt-0430':'GMT-0430',
-        'gmt-530':'GMT-0530', 'gmt-0530':'GMT-0530',
-        'gmt-630':'GMT-0630', 'gmt-0630':'GMT-0630',
-        'gmt-730':'GMT-0730', 'gmt-0730':'GMT-0730',
-        'gmt-830':'GMT-0830', 'gmt-0830':'GMT-0830',
-        'gmt-930':'GMT-0930', 'gmt-0930':'GMT-0930',
-        'gmt-1030':'GMT-1030',
-        'gmt-1130':'GMT-1130',
-        'gmt-1230':'GMT-1230',
+        'gmt-130': 'GMT-0130', 'gmt-0130': 'GMT-0130',
+        'gmt-230': 'GMT-0230', 'gmt-0230': 'GMT-0230',
+        'gmt-330': 'GMT-0330', 'gmt-0330': 'GMT-0330',
+        'gmt-430': 'GMT-0430', 'gmt-0430': 'GMT-0430',
+        'gmt-530': 'GMT-0530', 'gmt-0530': 'GMT-0530',
+        'gmt-630': 'GMT-0630', 'gmt-0630': 'GMT-0630',
+        'gmt-730': 'GMT-0730', 'gmt-0730': 'GMT-0730',
+        'gmt-830': 'GMT-0830', 'gmt-0830': 'GMT-0830',
+        'gmt-930': 'GMT-0930', 'gmt-0930': 'GMT-0930',
+        'gmt-1030': 'GMT-1030',
+        'gmt-1130': 'GMT-1130',
+        'gmt-1230': 'GMT-1230',
 
-        'greenwich':'Greenwich', 'hongkong':'Hongkong',
-        'iceland':'Iceland', 'iran':'Iran', 'israel':'Israel',
-        'jamaica':'Jamaica', 'japan':'Japan',
-        'mexico/bajanorte':'Mexico/BajaNorte',
-        'mexico/bajasur':'Mexico/BajaSur', 'mexico/general':'Mexico/General',
-        'mst':'US/Mountain', 'pst':'US/Pacific', 'poland':'Poland',
-        'singapore':'Singapore', 'turkey':'Turkey', 'universal':'Universal',
-        'utc':'Universal', 'uct':'Universal', 'us/alaska':'US/Alaska',
-        'us/aleutian':'US/Aleutian', 'us/arizona':'US/Arizona',
-        'us/central':'US/Central', 'us/eastern':'US/Eastern',
-        'us/east-indiana':'US/East-Indiana', 'us/hawaii':'US/Hawaii',
-        'us/indiana-starke':'US/Indiana-Starke', 'us/michigan':'US/Michigan',
-        'us/mountain':'US/Mountain', 'us/pacific':'US/Pacific',
-        'us/samoa':'US/Samoa',
+        'greenwich': 'Greenwich', 'hongkong': 'Hongkong',
+        'iceland': 'Iceland', 'iran': 'Iran', 'israel': 'Israel',
+        'jamaica': 'Jamaica', 'japan': 'Japan',
+        'mexico/bajanorte': 'Mexico/BajaNorte',
+        'mexico/bajasur': 'Mexico/BajaSur', 'mexico/general': 'Mexico/General',
+        'mst': 'US/Mountain', 'pst': 'US/Pacific', 'poland': 'Poland',
+        'singapore': 'Singapore', 'turkey': 'Turkey', 'universal': 'Universal',
+        'utc': 'Universal', 'uct': 'Universal', 'us/alaska': 'US/Alaska',
+        'us/aleutian': 'US/Aleutian', 'us/arizona': 'US/Arizona',
+        'us/central': 'US/Central', 'us/eastern': 'US/Eastern',
+        'us/east-indiana': 'US/East-Indiana', 'us/hawaii': 'US/Hawaii',
+        'us/indiana-starke': 'US/Indiana-Starke', 'us/michigan': 'US/Michigan',
+        'us/mountain': 'US/Mountain', 'us/pacific': 'US/Pacific',
+        'us/samoa': 'US/Samoa',
 
-        'ut':'Universal',
-        'bst':'GMT+1', 'mest':'GMT+2', 'sst':'GMT+2',
-        'fst':'GMT+2', 'wadt':'GMT+8', 'eadt':'GMT+11', 'nzdt':'GMT+13',
-        'wet':'GMT', 'wat':'GMT-1', 'at':'GMT-2', 'ast':'GMT-4',
-        'nt':'GMT-11', 'idlw':'GMT-12', 'cet':'GMT+1', 'cest':'GMT+2',
-        'met':'GMT+1',
-        'mewt':'GMT+1', 'swt':'GMT+1', 'fwt':'GMT+1', 'eet':'GMT+2',
-        'eest':'GMT+3',
-        'bt':'GMT+3', 'zp4':'GMT+4', 'zp5':'GMT+5', 'zp6':'GMT+6',
-        'wast':'GMT+7', 'cct':'GMT+8', 'jst':'GMT+9', 'east':'GMT+10',
-        'gst':'GMT+10', 'nzt':'GMT+12', 'nzst':'GMT+12', 'idle':'GMT+12',
-        'ret':'GMT+4'
+        'ut': 'Universal',
+        'bst': 'GMT+1', 'mest': 'GMT+2', 'sst': 'GMT+2',
+        'fst': 'GMT+2', 'wadt': 'GMT+8', 'eadt': 'GMT+11', 'nzdt': 'GMT+13',
+        'wet': 'GMT', 'wat': 'GMT-1', 'at': 'GMT-2', 'ast': 'GMT-4',
+        'nt': 'GMT-11', 'idlw': 'GMT-12', 'cet': 'GMT+1', 'cest': 'GMT+2',
+        'met': 'GMT+1',
+        'mewt': 'GMT+1', 'swt': 'GMT+1', 'fwt': 'GMT+1', 'eet': 'GMT+2',
+        'eest': 'GMT+3',
+        'bt': 'GMT+3', 'zp4': 'GMT+4', 'zp5': 'GMT+5', 'zp6': 'GMT+6',
+        'wast': 'GMT+7', 'cct': 'GMT+8', 'jst': 'GMT+9', 'east': 'GMT+10',
+        'gst': 'GMT+10', 'nzt': 'GMT+12', 'nzst': 'GMT+12', 'idle': 'GMT+12',
+        'ret': 'GMT+4'
     }
 
     def __init__(self):
@@ -353,8 +359,9 @@ class _cache(object):
             z = self._d[n] = _timezone(self._db[n])
             return z
 
+
 def _findLocalTimeZoneName(isDST):
-    if not _time.daylight: # pragma: no cover
+    if not _time.daylight:  # pragma: no cover
         # Daylight savings does not occur in this time zone.
         isDST = 0
     try:
@@ -369,7 +376,7 @@ def _findLocalTimeZoneName(isDST):
             offset = (-localzone / (60 * 60))
             majorOffset = int(offset)
             minorOffset = 0
-            if majorOffset != 0: # pragma: no cover
+            if majorOffset != 0:  # pragma: no cover
                 minorOffset = abs(int((offset % majorOffset) * 60.0))
             m = '+' if majorOffset >= 0 else ''
             lz = '%s%0.02d%0.02d' % (m, majorOffset, minorOffset)
@@ -380,6 +387,7 @@ def _findLocalTimeZoneName(isDST):
 
 # Some utility functions for calculating dates:
 
+
 def _calcSD(t):
     # Returns timezone-independent days since epoch and the fractional
     # part of the days.
@@ -388,11 +396,13 @@ def _calcSD(t):
     s = d - math.floor(d)
     return s, d
 
+
 def _calcDependentSecond(tz, t):
     # Calculates the timezone-dependent second (integer part only)
     # from the timezone-independent second.
     fset = _tzoffset(tz, t)
     return fset + int(math.floor(t)) + EPOCH - 86400
+
 
 def _calcDependentSecond2(yr, mo, dy, hr, mn, sc):
     # Calculates the timezone-dependent second (integer part only)
@@ -400,6 +410,7 @@ def _calcDependentSecond2(yr, mo, dy, hr, mn, sc):
     ss = int(hr) * 3600 + int(mn) * 60 + int(sc)
     x = int(_julianday(yr, mo, dy) - jd1901) * 86400 + ss
     return x
+
 
 def _calcIndependentSecondEtc(tz, x, ms):
     # Derive the timezone-independent second from the timezone
@@ -416,6 +427,7 @@ def _calcIndependentSecondEtc(tz, x, ms):
     s = d - math.floor(d)
     return s, d, t, millis
 
+
 def _calcHMS(x, ms):
     # hours, minutes, seconds from integer and float.
     hr = x // 3600
@@ -423,6 +435,7 @@ def _calcHMS(x, ms):
     mn = x // 60
     sc = x - mn * 60 + ms
     return hr, mn, sc
+
 
 def _julianday(y, m, d):
     if m > 12:
@@ -442,7 +455,8 @@ def _julianday(y, m, d):
         b = 2 - y // 100 + y // 400
     else:
         b = 0
-    return (1461 * y - yr_correct) // 4 + 306001 * (m + 1) // 10000 + d + 1720994 + b
+    return (1461 * y - yr_correct) // 4 + 306001 * \
+        (m + 1) // 10000 + d + 1720994 + b
 
 
 def _tzoffset(tz, t):
@@ -450,12 +464,13 @@ def _tzoffset(tz, t):
         return DateTimeParser._tzinfo[tz].info(t)[0]
     except Exception:
         if numericTimeZoneMatch(tz) is not None:
-            offset = int(tz[1:3])*3600+int(tz[3:5])*60
+            offset = int(tz[1:3]) * 3600 + int(tz[3:5]) * 60
             if tz[0] == '-':
                 return -offset
             return offset
         else:
-            return 0 # Assume UTC
+            return 0  # Assume UTC
+
 
 def _correctYear(year):
     # Y2K patch.
@@ -467,11 +482,12 @@ def _correctYear(year):
             year = 1900 + year
     return year
 
+
 def safegmtime(t):
     '''gmtime with a safety zone.'''
     try:
         return _time.gmtime(t)
-    except (ValueError, OverflowError): # Py2/Py3 respectively
+    except (ValueError, OverflowError):  # Py2/Py3 respectively
         raise TimeError('The time %r is beyond the range '
                         'of this Python implementation.' % t)
 
@@ -480,7 +496,7 @@ def safelocaltime(t):
     '''localtime with a safety zone.'''
     try:
         return _time.localtime(t)
-    except (ValueError, OverflowError): # Py2/Py3 respectively
+    except (ValueError, OverflowError):  # Py2/Py3 respectively
         raise TimeError('The time %r is beyond the range '
                         'of this Python implementation.' % t)
 
@@ -572,7 +588,6 @@ class DateTimeParser(object):
         else:
             yr, mo, dy, hr, mn, sc, tz = self._parse(arg, local)
 
-
         if not self._validDate(yr, mo, dy):
             raise DateError(arg, yr, mo, dy)
         if not self._validTime(hr, mn, int(sc)):
@@ -611,10 +626,9 @@ class DateTimeParser(object):
         _s, _d, t, _millisecs = _calcIndependentSecondEtc(tz, x, ms)
         return t
 
-
-    int_pattern = re.compile(r'([0-9]+)') #AJ
-    flt_pattern = re.compile(r':([0-9]+\.[0-9]+)') #AJ
-    name_pattern = re.compile(r'([a-zA-Z]+)', re.I) #AJ
+    int_pattern = re.compile(r'([0-9]+)')  # AJ
+    flt_pattern = re.compile(r':([0-9]+\.[0-9]+)')  # AJ
+    name_pattern = re.compile(r'([a-zA-Z]+)', re.I)  # AJ
     space_chars = ' \t\n'
     delimiters = '-/.:,+'
     _month_len = (
@@ -654,7 +668,7 @@ class DateTimeParser(object):
     _multipleZones = (_localzone0 != _localzone1)
     # For backward compatibility only:
     _isDST = _time.localtime()[8]
-    _localzone = _localzone1 if _isDST else  _localzone0
+    _localzone = _localzone1 if _isDST else _localzone0
 
     _tzinfo = _cache()
 
@@ -699,13 +713,12 @@ class DateTimeParser(object):
         # Find timezone first, since it should always be the last
         # element, and may contain a slash, confusing the parser.
 
-
         # First check for time zone of form +dd:dd
         tz = _iso_tz_re.search(string)
         if tz:
             tz = tz.start(0)
             tz, string = string[tz:], string[:tz].strip()
-            tz = tz[:3]+tz[4:]
+            tz = tz[:3] + tz[4:]
         else:
             # Look at last token
             sp = string.split()
@@ -714,19 +727,19 @@ class DateTimeParser(object):
                 string = ' '.join(sp[:-1])
             else:
                 tz = None  # Decide later, since the default time zone
-                           # could depend on the date.
+                # could depend on the date.
 
         ints = []
-        i, l = 0, len(string)
-        while i < l:
-            while i < l and string[i] in spaces:
+        i, len_string = 0, len(string)
+        while i < len_string:
+            while i < len_string and string[i] in spaces:
                 i = i + 1
-            if i < l and string[i] in delimiters:
+            if i < len_string and string[i] in delimiters:
                 d = string[i]
                 i = i + 1
             else:
                 d = ''
-            while i < l and string[i] in spaces:
+            while i < len_string and string[i] in spaces:
                 i = i + 1
 
             # The float pattern needs to look back 1 character, because it
@@ -745,7 +758,7 @@ class DateTimeParser(object):
                 ints.append(float(s))
                 continue
 
-            #AJ
+            # AJ
             ts_results = intpat.match(string, i)
             if ts_results:
                 s = ts_results.group(0)
@@ -753,20 +766,19 @@ class DateTimeParser(object):
                 ls = len(s)
                 i = i + ls
                 if (ls == 4 and d and d in '+-' and
-                    (len(ints) + (not not month) >= 3)):
+                        (len(ints) + (not not month) >= 3)):
                     tz = '%s%s' % (d, s)
                 else:
                     v = int(s)
                     ints.append(v)
                 continue
 
-
             ts_results = wordpat.match(string, i)
             if ts_results:
                 o = ts_results.group(0)
                 s = o.lower()
                 i = i + len(s)
-                if i < l and string[i] == '.':
+                if i < len_string and string[i] == '.':
                     i = i + 1
                 # Check for month name:
                 if s in MonthNumbers:
@@ -775,14 +787,14 @@ class DateTimeParser(object):
                         month = v
                     else:
                         raise SyntaxError(string)
-                    continue # pragma: no cover
+                    continue  # pragma: no cover
                 # Check for time modifier:
                 if s in TimeModifiers:
                     if tm is None:
                         tm = s
                     else:
                         raise SyntaxError(string)
-                    continue # pragma: no cover
+                    continue  # pragma: no cover
                 # Check for and skip day of week:
                 if s in DayOfWeekNames:
                     continue
@@ -880,7 +892,6 @@ class DateTimeParser(object):
                     if ints:
                         raise SyntaxError(string)
 
-
         tod_int = int(math.floor(tod))
         ms = tod - tod_int
         hr, mn, sc = _calcHMS(tod_int, ms)
@@ -896,7 +907,8 @@ class DateTimeParser(object):
     def _validDate(self, y, m, d):
         if m < 1 or m > 12 or y < 0 or d < 1 or d > 31:
             return 0
-        return d <= self._month_len[(y % 4 == 0 and (y % 100 != 0 or y % 400 == 0))][m]
+        is_leap_year = y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
+        return d <= self._month_len[is_leap_year][m]
 
     def _validTime(self, h, m, s):
         return h >= 0 and h <= 23 and m >= 0 and m <= 59 and s >= 0 and s < 60
@@ -906,8 +918,7 @@ class DateTimeParser(object):
             return self.__parse_iso8601(s)
         except IndexError:
             raise DateError(
-                'Not an ISO 8601 compliant date string: "%s"' %  s)
-
+                'Not an ISO 8601 compliant date string: "%s"' % s)
 
     def __parse_iso8601(self, s):
         """Parse an ISO 8601 compliant date.
@@ -937,7 +948,7 @@ class DateTimeParser(object):
             day = int(fields[5])
 
         if s.find('T') > -1:
-            fields = timereg.split(s[s.find('T')+1:])
+            fields = timereg.split(s[s.find('T') + 1:])
 
             if fields[1]:
                 hour = int(fields[1])
@@ -958,6 +969,7 @@ class DateTimeParser(object):
         return (year, month, day, hour, minute, seconds,
                 '%s%02d%02d' % (tzsign, hour_off, min_off))
 
+
 parser = DateTimeParser()
 parse = parser.parse
 time = parser.time
@@ -966,6 +978,7 @@ time = parser.time
 # Time-zone info based soley on offsets
 #
 # Share tzinfos for the same offset
+
 
 class _tzinfo(_std_tzinfo):
 
@@ -987,11 +1000,12 @@ class _tzinfo(_std_tzinfo):
     def tzname(self, dt):
         return None
 
-    def __repr__(self): # pragma: no cover
+    def __repr__(self):  # pragma: no cover
         return 'tzinfo(%d)' % self.__minutes
 
 
 _tzinfos = {}
+
 
 def tzinfo(offset):
 
@@ -1005,6 +1019,7 @@ def tzinfo(offset):
 
     return info
 
+
 tzinfo.__safe_for_unpickling__ = True
 
 #
@@ -1012,8 +1027,9 @@ tzinfo.__safe_for_unpickling__ = True
 
 
 def parseDatetimetz(string, local=True):
-    """
-    Parse the given string using :func:`parse` and return a :class:`datetime.datetime` instance.
+    """Parse the given string using :func:`parse`.
+
+    Return a :class:`datetime.datetime` instance.
     """
     y, mo, d, h, m, s, tz = parse(string, local)
     s, micro = divmod(s, 1.0)
@@ -1024,5 +1040,6 @@ def parseDatetimetz(string, local=True):
     else:
         _tzinfo = None
     return _datetime(y, mo, d, int(h), int(m), int(s), int(micro), _tzinfo)
+
 
 _iso_tz_re = re.compile(r"[-+]\d\d:\d\d$")

@@ -33,20 +33,19 @@ class Test(unittest.TestCase):
             self.assertIs(info1, info2)
             self.assertIs(pickle.loads(pickle.dumps(info1)), info1)
 
-
             self.assertEqual(info1.utcoffset(None),
                              datetime.timedelta(minutes=minutes))
 
             self.assertEqual(info1.dst(None), None)
             self.assertEqual(info1.tzname(None), None)
 
-        for minutes in 900000, 1440*60, -1440*60, -900000:
+        for minutes in 900000, 1440 * 60, -1440 * 60, -900000:
             self.assertRaises(ValueError, tzinfo, minutes)
-
 
 
 def test_suite():
     return unittest.defaultTestLoader.loadTestsFromName(__name__)
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')
