@@ -105,9 +105,8 @@ def rfc1123_date(ts=None):
 
     :param int ts: A timestamp as returned by :func:`time.time`.
         If not given, the current time will be used.
-    If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
-    converted to one to prevent a DeprecationWarning in Python 3.8+.
-
+        If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
+        converted to one to prevent a DeprecationWarning in Python 3.8+.
     """
     if ts is None:
         ts = _time.time()
