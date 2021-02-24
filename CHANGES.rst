@@ -9,6 +9,9 @@
 
 - Add support for Python 3.7, 3.8 and 3.9.
 
+- Prevent DeprecationWarning in Python 3.8+ when using a non-int parameter for
+  ``iso8601_date``, ``rfc850_date``, and ``rfc1123_date``.
+
 
 4.2.0 (2017-08-14)
 ==================

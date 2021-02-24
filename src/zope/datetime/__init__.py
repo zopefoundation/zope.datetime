@@ -60,10 +60,15 @@ def iso8601_date(ts=None):
 
     For example: '2000-11-10T16:21:09-08:00'
 
-    :param float ts: A timestamp as returned by :func:`time.time`.
+    :param int ts: A timestamp as returned by :func:`time.time`.
         If not given, the current time will be used.
+        If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
+        converted to one to prevent a DeprecationWarning in Python 3.8+.
     """
-    ts = _time.time() if ts is None else ts
+    if ts is None:
+        ts = _time.time()
+    else:
+        ts = int(ts)
     return _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime(ts))
 
 
@@ -73,10 +78,15 @@ def rfc850_date(ts=None):
 
     For example, 'Friday, 10-Nov-00 16:21:09 GMT'.
 
-    :param float ts: A timestamp as returned by :func:`time.time`.
+    :param int ts: A timestamp as returned by :func:`time.time`.
         If not given, the current time will be used.
+        If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
+        converted to one to prevent a DeprecationWarning in Python 3.8+.
     """
-    ts = _time.time() if ts is None else ts
+    if ts is None:
+        ts = _time.time()
+    else:
+        ts = int(ts)
     year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
     return "%s, %02d-%3s-%2s %02d:%02d:%02d GMT" % (
         weekday_full[wd],
@@ -93,11 +103,16 @@ def rfc1123_date(ts=None):
 
     For example, 'Fri, 10 Nov 2000 16:21:09 GMT'.
 
-    :param float ts: A timestamp as returned by :func:`time.time`.
+    :param int ts: A timestamp as returned by :func:`time.time`.
         If not given, the current time will be used.
-    """
+    If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
+    converted to one to prevent a DeprecationWarning in Python 3.8+.
 
-    ts = _time.time() if ts is None else ts
+    """
+    if ts is None:
+        ts = _time.time()
+    else:
+        ts = int(ts)
     year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
     return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
         weekday_abbr[wd],
