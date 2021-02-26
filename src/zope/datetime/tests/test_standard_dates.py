@@ -20,7 +20,10 @@ from zope.datetime import time
 
 
 class FakeDateTime:
-    """A class which mimics a DateTime class which can be converted to int."""
+    """A class which mimics a DateTime class which can be converted to int.
+
+    It behaves like the Zope DateTime class in the DateTime package.
+    """
 
     time = time("2000-01-01T01:01:01.234Z")
 

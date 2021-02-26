@@ -53,6 +53,19 @@ monthname = [
 ]
 
 
+def _get_gmtime_compatible_timestamp(ts):
+    """Try to convert any argument to a timestamp ``time.gmtime`` can use."""
+    if ts is None:
+        # ``time.gmtime`` uses the current time but only if not given any
+        # parameter. It is easier to compute current time here:
+        ts = _time.time()
+    else:
+        # ``time.gmtime`` ignores fractions of seconds. Before Python 3.10 it
+        # used to convert its argument to an ``int`` if it was not a number.
+        ts = int(ts)
+    return ts
+
+
 def iso8601_date(ts=None):
     """
     Return an ISO 8601 formatted date string, required
@@ -60,15 +73,13 @@ def iso8601_date(ts=None):
 
     For example: '2000-11-10T16:21:09-08:00'
 
-    :param int ts: A timestamp as returned by :func:`time.time`.
+    :param any ts: A timestamp as returned by :func:`time.time` (``float``),
+        seconds since the epoch (``int``) or any object which can be converted
+        to ``int`` via a ``__int__`` method returning number of seconds since
+        the epoch.
         If not given, the current time will be used.
-        If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
-        converted to one to prevent a DeprecationWarning in Python 3.8+.
     """
-    if ts is None:
-        ts = _time.time()
-    else:
-        ts = int(ts)
+    ts = _get_gmtime_compatible_timestamp(ts)
     return _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime(ts))
 
 
@@ -78,15 +89,12 @@ def rfc850_date(ts=None):
 
     For example, 'Friday, 10-Nov-00 16:21:09 GMT'.
 
-    :param int ts: A timestamp as returned by :func:`time.time`.
-        If not given, the current time will be used.
-        If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
-        converted to one to prevent a DeprecationWarning in Python 3.8+.
+    :param any ts: A timestamp as returned by :func:`time.time` (``float``),
+        seconds since the epoch (``int``) or any object which can be converted
+        to ``int`` via a ``__int__`` method returning number of seconds since
+        the epoch.
     """
-    if ts is None:
-        ts = _time.time()
-    else:
-        ts = int(ts)
+    ts = _get_gmtime_compatible_timestamp(ts)
     year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
     return "%s, %02d-%3s-%2s %02d:%02d:%02d GMT" % (
         weekday_full[wd],
@@ -103,15 +111,12 @@ def rfc1123_date(ts=None):
 
     For example, 'Fri, 10 Nov 2000 16:21:09 GMT'.
 
-    :param int ts: A timestamp as returned by :func:`time.time`.
-        If not given, the current time will be used.
-        If ``param`` is not an ``int`` (e. g. a DateTime object) it gets
-        converted to one to prevent a DeprecationWarning in Python 3.8+.
+    :param any ts: A timestamp as returned by :func:`time.time` (``float``),
+        seconds since the epoch (``int``) or any object which can be converted
+        to ``int`` via a ``__int__`` method returning number of seconds since
+        the epoch.
     """
-    if ts is None:
-        ts = _time.time()
-    else:
-        ts = int(ts)
+    ts = _get_gmtime_compatible_timestamp(ts)
     year, month, day, hh, mm, ss, wd, _y, _z = _time.gmtime(ts)
     return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
         weekday_abbr[wd],
