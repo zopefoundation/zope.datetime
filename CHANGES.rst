@@ -2,7 +2,7 @@
  CHANGES
 =========
 
-4.3.0 (unreleased)
+4.3.0 (2021-02-26)
 ==================
 
 - Drop support for Python 3.4.
