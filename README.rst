@@ -24,4 +24,4 @@
 
 Functions to parse and format date/time strings in common formats.
 
-Documentation is hosted at https://zopedatetime.readthedocs.io/
+The documentation is hosted at https://zopedatetime.readthedocs.io/
