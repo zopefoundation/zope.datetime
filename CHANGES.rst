@@ -5,7 +5,7 @@
 4.3.1 (unreleased)
 ==================
 
-- Add support for Python 3.10 (as of beta 3).
+- Add support for Python 3.10.
 
 
 4.3.0 (2021-02-26)
