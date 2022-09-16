@@ -14,9 +14,9 @@
 """Test for the 'tzinfo() function
 """
 
-import unittest
-import pickle
 import datetime
+import pickle
+import unittest
 
 from zope.datetime import tzinfo
 

@@ -14,12 +14,15 @@
 """Test datetime parser
 """
 import unittest
-from time import gmtime
 from datetime import datetime
+from time import gmtime
 
-from zope.datetime import parse, time, DateTimeError
-from zope.datetime import parseDatetimetz, tzinfo
+from zope.datetime import DateTimeError
 from zope.datetime import _tzoffset
+from zope.datetime import parse
+from zope.datetime import parseDatetimetz
+from zope.datetime import time
+from zope.datetime import tzinfo
 
 
 class Test(unittest.TestCase):

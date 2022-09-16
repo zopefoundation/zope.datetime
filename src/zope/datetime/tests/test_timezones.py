@@ -18,10 +18,10 @@ import unittest
 class TestTimezones(unittest.TestCase):
 
     def test_dumpTimezoneInfo(self):
+        import io
+
         from zope.datetime.timezones import dumpTimezoneInfo
         from zope.datetime.timezones import historical_zone_info
-
-        import io
 
         output = io.StringIO() if bytes is not str else io.BytesIO()
 

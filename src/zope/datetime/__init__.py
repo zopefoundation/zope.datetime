@@ -22,11 +22,10 @@ import re
 # there is a method definition that makes just "time"
 # problematic while executing a class definition
 import time as _time
-from time import tzname
-
 from datetime import datetime as _datetime
-from datetime import tzinfo as _std_tzinfo, timedelta as _timedelta
-
+from datetime import timedelta as _timedelta
+from datetime import tzinfo as _std_tzinfo
+from time import tzname
 
 from zope.datetime.timezones import historical_zone_info as _data
 

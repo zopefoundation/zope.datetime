@@ -12,10 +12,11 @@
 #
 ##############################################################################
 # pylint:disable=protected-access
+import time
 import unittest
 
-import time
 import six
+
 from zope import datetime
 
 
