@@ -10,7 +10,7 @@ with-legacy-python = true
 with-docs = true
 with-sphinx-doctests = false
 with-windows = false
-with-future-python = true
+with-future-python = false
 
 [coverage]
 fail-under = 99
