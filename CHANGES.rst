@@ -7,6 +7,7 @@
 
 - Add support for Python 3.10, 3.11.
 
+- Drop `six` usage.
 
 4.3.0 (2021-02-26)
 ==================
