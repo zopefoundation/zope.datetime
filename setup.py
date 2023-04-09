@@ -69,7 +69,6 @@ setup(name='zope.datetime',
       namespace_packages=['zope', ],
       install_requires=[
           'setuptools',
-          'six',
       ],
       tests_require=TESTS_REQUIRE,
       extras_require={
