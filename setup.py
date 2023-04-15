@@ -39,7 +39,7 @@ setup(name='zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
       author='Zope Foundation and Contributors',
-      author_email='zope-dev@zope.org',
+      author_email='zope-dev@zope.dev',
       long_description=read('README.rst') + '\n\n' + read('CHANGES.rst'),
       classifiers=[
           'Development Status :: 5 - Production/Stable',
