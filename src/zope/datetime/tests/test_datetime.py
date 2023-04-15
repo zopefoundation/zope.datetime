@@ -15,15 +15,14 @@
 import time
 import unittest
 
-import six
-
 from zope import datetime
 
 
 class TestCache(unittest.TestCase):
 
     def test_error(self):
-        with self.assertRaisesRegex(datetime.DateTimeError, "Unrecognized timezone"):
+        with self.assertRaisesRegex(
+                datetime.DateTimeError, "Unrecognized timezone"):
             datetime._cache().__getitem__('foo')
 
 
@@ -148,7 +147,8 @@ class TestDateTimeParser(unittest.TestCase):
             return (2000, 1, 1, 0, 0, 0, '+FOO')
         dtp = self._makeOne()
         dtp.parse = t
-        with self.assertRaisesRegex(datetime.DateTimeError, "Unknown time zone"):
+        with self.assertRaisesRegex(
+                datetime.DateTimeError, "Unknown time zone"):
             dtp.time("foo")
 
     def test_time_no_tz(self):
@@ -263,7 +263,8 @@ class TestDateTimeParser(unittest.TestCase):
 
     def test_parse_iso_index_error(self):
         dtp = self._makeOne()
-        with self.assertRaisesRegex(datetime.DateError, "Not an ISO 8601 compliant"):
+        with self.assertRaisesRegex(
+                datetime.DateError, "Not an ISO 8601 compliant"):
             dtp._parse_iso8601('')
 
     def test_parse_with_dot(self):
