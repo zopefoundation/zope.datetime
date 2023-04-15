@@ -15,7 +15,6 @@
 
 Encapsulation of date/time values
 """
-from __future__ import division
 
 import math
 import re
@@ -167,7 +166,7 @@ jd1901 = 2415385
 numericTimeZoneMatch = re.compile(r'[+-][0-9][0-9][0-9][0-9]').match  # TS
 
 
-class _timezone(object):
+class _timezone:
 
     def __init__(self, data):
         self.name, self.timect, self.typect, \
@@ -212,7 +211,7 @@ class _timezone(object):
         return self.tinfo[idx][0], self.tinfo[idx][1], zs[: zs.find('\000')]
 
 
-class _cache(object):
+class _cache:
 
     _zlst = [
         'Brazil/Acre', 'Brazil/DeNoronha', 'Brazil/East',
@@ -519,7 +518,7 @@ def safelocaltime(t):
                         'of this Python implementation.' % t)
 
 
-class DateTimeParser(object):
+class DateTimeParser:
 
     def parse(self, arg, local=True):
         """
@@ -785,7 +784,7 @@ class DateTimeParser(object):
                 i = i + ls
                 if (ls == 4 and d and d in '+-' and
                         (len(ints) + (not not month) >= 3)):
-                    tz = '%s%s' % (d, s)
+                    tz = '{}{}'.format(d, s)
                 else:
                     v = int(s)
                     ints.append(v)

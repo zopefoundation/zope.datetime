@@ -13,7 +13,6 @@
 ##############################################################################
 """ Historical timezone data, ported from Zope2's DateTime.DateTimeZone.
 """
-from __future__ import print_function
 
 
 historical_zone_info = {
@@ -1190,7 +1189,7 @@ def dumpTimezoneInfo(_data, out=None):
     items = sorted(_data.items())
     for key, value in items:
         v1, v2, v3, ilist, bitmap, two_by_three, two_nullterm = value
-        print("'%s': ('%s', %s, %s," % (key, v1, v2, v3), file=out)
+        print("'{}': ('{}', {}, {},".format(key, v1, v2, v3), file=out)
         print("[", end='', file=out)
         while ilist:
             next_5, ilist = ilist[:5], ilist[5:]
@@ -1198,7 +1197,7 @@ def dumpTimezoneInfo(_data, out=None):
             print("%s," % line, file=out)
         print("], ", file=out)
         print("%s," % repr(bitmap), file=out)
-        print("%s, %s)," % (repr(two_by_three), repr(two_nullterm)), file=out)
+        print("{}, {}),".format(repr(two_by_three), repr(two_nullterm)), file=out)
 
     print("}", file=out)
 
