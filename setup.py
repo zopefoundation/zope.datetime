@@ -34,23 +34,19 @@ TESTS_REQUIRE = [
 ]
 
 setup(name='zope.datetime',
-      version='4.3.1.dev0',
+      version='5.0.0.dev0',
       url='http://github.com/zopefoundation/zope.datetime',
       license='ZPL 2.1',
       description='Zope datetime',
       author='Zope Foundation and Contributors',
-      author_email='zope-dev@zope.org',
+      author_email='zope-dev@zope.dev',
       long_description=read('README.rst') + '\n\n' + read('CHANGES.rst'),
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: Developers',
           'License :: OSI Approved :: Zope Public License',
           'Programming Language :: Python',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
@@ -70,6 +66,7 @@ setup(name='zope.datetime',
       install_requires=[
           'setuptools',
       ],
+      python_requires='>=3.7',
       tests_require=TESTS_REQUIRE,
       extras_require={
           'test': TESTS_REQUIRE,

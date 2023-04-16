@@ -74,5 +74,5 @@ del _test
 
 def test_suite():
     return unittest.TestSuite((
-        unittest.makeSuite(LP_139360),
+        unittest.defaultTestLoader.loadTestsFromTestCase(LP_139360),
     ))
