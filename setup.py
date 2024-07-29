@@ -61,13 +61,11 @@ setup(name='zope.datetime',
       ],
       packages=find_packages('src'),
       package_dir={'': 'src'},
-      test_suite='zope.datetime',
       namespace_packages=['zope', ],
       install_requires=[
           'setuptools',
       ],
       python_requires='>=3.7',
-      tests_require=TESTS_REQUIRE,
       extras_require={
           'test': TESTS_REQUIRE,
           'docs': [
