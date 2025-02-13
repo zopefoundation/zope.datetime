@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # zope.app.apidoc documentation build configuration file, created by
 # sphinx-quickstart on Tue Sep 13 15:00:43 2016.
@@ -21,7 +20,10 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import os
 import sys
+
 import pkg_resources
+
+
 sys.path.append(os.path.abspath('../src'))
 rqmt = pkg_resources.require('zope.datetime')[0]
 
@@ -47,8 +49,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 # The encoding of source files.
 #
@@ -58,9 +59,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'zope.datetime'
-copyright = u'2017, Zope Community'
-author = u'Zope Community'
+project = 'zope.datetime'
+copyright = '2017-2025, Zope Community'
+author = 'Zope Community'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -76,7 +77,7 @@ release = rqmt.version
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -155,8 +156,8 @@ html_theme = 'sphinx_rtd_theme'
 # html_logo = None
 
 # The name of an image file (relative to this directory) to use as a favicon of
-# the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
+# the docs.  This file should be a Windows icon file (.ico) being 16x16 or
+# 32x32 pixels large.
 #
 # html_favicon = None
 
@@ -248,29 +249,29 @@ htmlhelp_basename = 'zopedatetime'
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-     # The paper size ('letterpaper' or 'a4paper').
-     #
-     # 'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #
+    # 'papersize': 'letterpaper',
 
-     # The font size ('10pt', '11pt' or '12pt').
-     #
-     # 'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #
+    # 'pointsize': '10pt',
 
-     # Additional stuff for the LaTeX preamble.
-     #
-     # 'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #
+    # 'preamble': '',
 
-     # Latex figure (float) alignment
-     #
-     # 'figure_align': 'htbp',
+    # Latex figure (float) alignment
+    #
+    # 'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'zopedatetime.tex', u'zope.datetime Documentation',
-     u'Zope Community', 'manual'),
+    (master_doc, 'zopedatetime.tex', 'zope.datetime Documentation',
+     'Zope Community', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -311,7 +312,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'zopedatetime', u'zope.datetime Documentation',
+    (master_doc, 'zopedatetime', 'zope.datetime Documentation',
      [author], 1)
 ]
 
@@ -326,7 +327,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'zopedatetime', u'zope.datetime Documentation',
+    (master_doc, 'zopedatetime', 'zope.datetime Documentation',
      author, 'zopedatetime', 'One line description of project.',
      'Miscellaneous'),
 ]
@@ -350,13 +351,16 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'https://docs.python.org/': None,
+    'python': ('https://docs.python.org/', None)
 }
 
-extlinks = {'issue': ('https://github.com/zopefoundation/zope.datetime/issues/%s',
-                      'issue #'),
-            'pr': ('https://github.com/zopefoundation/zope.datetime/pull/%s',
-                   'pull request #')}
+extlinks = {
+    'issue': (
+        'https://github.com/zopefoundation/zope.datetime/issues/%s',
+        'issue #'),
+    'pr': (
+        'https://github.com/zopefoundation/zope.datetime/pull/%s',
+        'pull request #')}
 
 autodoc_default_flags = [
     'members',
