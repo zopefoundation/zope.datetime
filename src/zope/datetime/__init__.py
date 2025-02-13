@@ -29,12 +29,6 @@ from time import tzname
 from zope.datetime.timezones import historical_zone_info as _data
 
 
-if str is bytes:  # PY2
-    StringTypes = (basestring,)  # noqa: F821 undefined name pragma: PY2
-else:
-    StringTypes = (str,)  # pragma: PY3
-
-
 # These are needed because the various date formats below must
 # be in english per the RFCs. That means we can't use strftime,
 # which is affected by different locale settings.
@@ -504,7 +498,7 @@ def safegmtime(t):
     '''gmtime with a safety zone.'''
     try:
         return _time.gmtime(t)
-    except (ValueError, OverflowError):  # Py2/Py3 respectively
+    except OverflowError:
         raise TimeError('The time %r is beyond the range '
                         'of this Python implementation.' % t)
 
@@ -513,7 +507,7 @@ def safelocaltime(t):
     '''localtime with a safety zone.'''
     try:
         return _time.localtime(t)
-    except (ValueError, OverflowError):  # Py2/Py3 respectively
+    except OverflowError:  # Py2/Py3 respectively
         raise TimeError('The time %r is beyond the range '
                         'of this Python implementation.' % t)
 
@@ -594,7 +588,7 @@ class DateTimeParser:
         :raises TypeError:
            If the argument is not a string.
         """
-        if not isinstance(arg, StringTypes):
+        if not isinstance(arg, str):
             raise TypeError('Expected a string argument')
 
         if not arg:
@@ -784,7 +778,7 @@ class DateTimeParser:
                 i = i + ls
                 if (ls == 4 and d and d in '+-' and
                         (len(ints) + (not not month) >= 3)):
-                    tz = '{}{}'.format(d, s)
+                    tz = f'{d}{s}'
                 else:
                     v = int(s)
                     ints.append(v)
