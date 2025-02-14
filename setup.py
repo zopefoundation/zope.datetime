@@ -34,7 +34,7 @@ TESTS_REQUIRE = [
 ]
 
 setup(name='zope.datetime',
-      version='5.1.dev0',
+      version='5.1',
       url='http://github.com/zopefoundation/zope.datetime',
       license='ZPL-2.1',
       description='Zope datetime',
