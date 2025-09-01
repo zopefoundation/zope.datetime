@@ -20,7 +20,6 @@
 """
 import os
 
-from setuptools import find_packages
 from setuptools import setup
 
 
@@ -30,7 +29,7 @@ def read(*rnames):
 
 
 TESTS_REQUIRE = [
-    'zope.testrunner',
+    'zope.testrunner >= 6.4',
 ]
 
 setup(name='zope.datetime',
@@ -59,9 +58,6 @@ setup(name='zope.datetime',
           'Topic :: Internet :: WWW/HTTP',
           'Topic :: Software Development',
       ],
-      packages=find_packages('src'),
-      package_dir={'': 'src'},
-      namespace_packages=['zope', ],
       install_requires=[
           'setuptools',
       ],
