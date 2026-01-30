@@ -52,8 +52,8 @@ def _get_gmtime_compatible_timestamp(ts):
         # parameter. It is easier to compute current time here:
         ts = _time.time()
     else:
-        # ``time.gmtime`` ignores fractions of seconds. Before Python 3.10 it
-        # used to convert its argument to an ``int`` if it was not a number.
+        # ``time.gmtime`` ignores fractions of seconds but we have to convert
+        # its argument to an ``int``.
         ts = int(ts)
     return ts
 
@@ -507,9 +507,11 @@ def safelocaltime(t):
     '''localtime with a safety zone.'''
     try:
         return _time.localtime(t)
-    except OverflowError:  # Py2/Py3 respectively
-        raise TimeError('The time %r is beyond the range '
-                        'of this Python implementation.' % t)
+    except OverflowError:
+        raise TimeError(
+            "The time %r is beyond the range "
+            "of this Python implementation." % t
+        )
 
 
 class DateTimeParser:
